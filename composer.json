@@ -1,0 +1,26 @@
+{
+    "name": "centralnic/centralnic-whmcs-module",
+    "description": "CentralNic EPP Module for WHMCS Billing Automation Platform",
+    "keywords": [
+        "whmcs",
+        "web host automation platform",
+        "registry module",
+        "domain registry module"
+    ],
+    "homepage": "https://centralnicregistry.com/",
+    "license": "Proprietary",
+    "authors": [
+        {
+            "name": "CentralNic Registry",
+            "email": "support@centralnic.com",
+            "homepage": "https://centralnicregistry.com",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "email": "support@centralnic.com"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "@stable"
+    }
+}

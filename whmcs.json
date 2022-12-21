@@ -1,0 +1,26 @@
+{
+    "schema": "1.0",
+    "type": "whmcs-registrars",
+    "name": "centralnic-whmcs-module",
+    "license": "Proprietary",
+    "category": "registrar",
+    "description": {
+        "name": "CentralNic WHMCS Module",
+        "tagline": "This module allows accredited CentralNic registrars to register and manage domain names using their CentralNic registrar account."
+    },
+    "logo": {
+        "filename": "logo.png"
+    },
+    "support": {
+        "homepage": "https://centralnicregistry.com", 
+        "email": "support@centralnic.com", 
+        "support_url": "https://centralnicregistry.com", 
+        "docs_url": "https://centralnicregistry.com"
+    },
+    "authors": [
+        {
+            "name": "CentralNic Registry",
+            "homepage": "https://centralnicregistry.com"
+        }
+    ]
+}
