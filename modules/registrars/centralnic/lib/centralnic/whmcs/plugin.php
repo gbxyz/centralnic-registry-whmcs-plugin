@@ -865,7 +865,7 @@ final class plugin {
         for ($i = 0 ; $i < count($sets) ; $i++) $pw[] = $sets[$i][random_int(0, count($sets[$i])-1)];
 
         // pad the password out using random characters from random sets
-        while (count($pw) < 16) {
+        while (count($pw) < 48) {
             $i = random_int(0, count($sets)-1);
             $pw[] = $sets[$i][random_int(0, count($sets[$i])-1)];
         }
