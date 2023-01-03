@@ -909,7 +909,7 @@ class plugin {
     /**
      * get domain information
      */
-    private static function info(string $domain) : xml\frame {
+    public static function info(string $domain) : xml\frame {
         $frame = new xml\frame;
         $info = $frame->add($frame->nsCreate(epp::xmlns, epp::epp))
                     ->add($frame->create(epp::command))
@@ -923,7 +923,7 @@ class plugin {
     /**
      * get contact information
      */
-    private static function contactInfo(string $id) : frame {
+    public static function contactInfo(string $id) : xml\frame {
         $frame = new xml\frame;
         $info = $frame->add($frame->nsCreate(epp::xmlns, epp::epp))
                     ->add($frame->create(epp::command))
@@ -934,7 +934,7 @@ class plugin {
         return self::connection()->request($frame);
     }
 
-    function getLastResponse() : xml\frame {
+    public function getLastResponse() : xml\frame {
         return self::connection()->getLastResponse();
     }
 }
