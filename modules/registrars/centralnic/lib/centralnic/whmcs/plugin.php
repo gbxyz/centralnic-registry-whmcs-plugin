@@ -59,7 +59,7 @@ function magic() {
 /**
  * this class holds the actual business logic
  */
-class plugin {
+final class plugin {
 
     const registry_domain   = 'centralnic.com';
 	const prod_host         = 'epp.'.self::registry_domain;
