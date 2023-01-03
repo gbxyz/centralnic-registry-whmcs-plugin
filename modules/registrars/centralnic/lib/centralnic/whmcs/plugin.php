@@ -448,28 +448,34 @@ final class plugin {
     public static function SaveContactDetails(array $params) : array {
         $epp = self::connection($params);
 
-        $info = self::info($params['domain']);
-
-        $contacts = [];
+        //
+        // create new contact objects
+        //
+        $new = [];
         foreach (self::$contactDetailsMap as $type => $name) {
-            $contacts[$type] = self::createContact([
-                'name'      => $params['contactdetails'][$name]['Full Name'],
-                'org'       => $params['contactdetails'][$name]['Company Name'],
-                'street'    => [
-                    $params['contactdetails'][$name]['Address 1'],
-                    $params['contactdetails'][$name]['Address 2'],
-                    $params['contactdetails'][$name]['Address 3'],
-                ],
-                'city'      => $params['contactdetails'][$name]['City'],
-                'sp'        => $params['contactdetails'][$name]['State'],
-                'pc'        => $params['contactdetails'][$name]['Postcode'],
-                'cc'        => $params['contactdetails'][$name]['Country'],
-                'voice'     => $params['contactdetails'][$name]['Phone Number'],
-                'fax'       => $params['contactdetails'][$name]['Fax Number'],
-                'email'     => $params['contactdetails'][$name]['Email Address'],
-            ]);
+            if (isset($params['contactdetails'][$name])) {
+                $new[$type] = self::createContact([
+                    'name'      => $params['contactdetails'][$name]['Full Name'],
+                    'org'       => $params['contactdetails'][$name]['Company Name'],
+                    'street'    => [
+                        $params['contactdetails'][$name]['Address 1'],
+                        $params['contactdetails'][$name]['Address 2'],
+                        $params['contactdetails'][$name]['Address 3'],
+                    ],
+                    'city'      => $params['contactdetails'][$name]['City'],
+                    'sp'        => $params['contactdetails'][$name]['State'],
+                    'pc'        => $params['contactdetails'][$name]['Postcode'],
+                    'cc'        => $params['contactdetails'][$name]['Country'],
+                    'voice'     => $params['contactdetails'][$name]['Phone Number'],
+                    'fax'       => $params['contactdetails'][$name]['Fax Number'],
+                    'email'     => $params['contactdetails'][$name]['Email Address'],
+                ]);
+            }
         }
 
+        //
+        // build <update> frame
+        //
         $frame = new xml\frame;
 
         $update = $frame->add($frame->nsCreate(epp::xmlns, epp::epp))
@@ -479,24 +485,59 @@ final class plugin {
 
         $update->add($frame->create('name', $params['domain']));
 
+        //
+        // add <add> element for new contacts
+        //
         $add = $update->add($frame->create('add'));
         foreach (['admin', 'tech', 'billing'] as $type) {
-            $add->add($frame->create('contact', $contacts[$type]))->setAttribute('type', $type);
+            if (isset($new[$type])) {
+                $add->add($frame->create('contact', $new[$type]))->setAttribute('type', $type);
+            }
         }
+        if ($add->childNodes->length < 1) $update->removeChild($add);
 
-        $old = [$info->first('registrant')->textContent];
+        //
+        // get current domain info
+        //
+        $info = self::info($params['domain']);
 
+        //
+        // this tracks contact objects being removed from the domain
+        //
+        $old = [];
+
+        //
+        // specify contacts being removed
+        //
         $rem = $update->add($frame->create('rem'));
         foreach ($info->get('contact') as $el) {
-            $rem->add($frame->create('contact', $el->textContent))->setAttribute('type', $el->getAttribute('type'));
-            $old[] = $el->textContent;
+            $type = $el->getAttribute('type');
+
+            if (isset($new[$type])) {
+                $rem->add($frame->create('contact', $el->textContent))
+                    ->setAttribute('type', $type);
+
+                $old[] = $el->textContent;
+            }
+        }
+        if ($rem->childNodes->length < 1) $update->removeChild($rem);
+
+        if (isset($new['registrant'])) {
+            $old[] = $info->first('registrant')->textContent;
+
+            $update->add($frame->create('chg'))
+                ->add($frame->create('registrant', $new['registrant']));
         }
 
-        $update->add($frame->create('chg'))
-            ->add($frame->create('registrant', $contacts['registrant']));
+        //
+        // if the <update> element only contains the <name> element, we're not making
+        // any changes, so don't bother sending the frame to the server
+        //
+        if ($update->childNodes->length > 1) $epp->request($frame);
 
-        $epp->request($frame);
-
+        //
+        // delete any of the old contacts that are unlinked
+        //
         foreach (array_unique($old) as $id) {
             try {
                 $linked = false;
