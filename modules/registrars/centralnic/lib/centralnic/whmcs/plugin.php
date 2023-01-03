@@ -793,6 +793,10 @@ final class plugin {
      *
      */
 
+    /**
+     * get the connection to the EPP server
+     * if no $params is provided, the existing connection will be returned
+     */
     public static function connection(array $params=NULL) : epp {
         if (!isset(self::$epp)) self::$epp = new epp(
             1 == $params['testMode'] ? self::test_host : self::prod_host,
@@ -802,6 +806,9 @@ final class plugin {
         return self::$epp;
     }
 
+    /**
+     * generate an authInfo code that meets the known server requirements
+     */
     private static function generateAuthInfo() : string {
         // this contains all the characters that may appear in the authInfo code, grouped by "type"
         $sets = [
