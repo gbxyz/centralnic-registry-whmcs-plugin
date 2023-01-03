@@ -150,7 +150,7 @@ class epp {
     /**
      * send a frame to the server and get the response
      */
-    function request(xml\frame $frame) : xml\frame {
+    public function request(xml\frame $frame) : xml\frame {
 
         $this->log[] = [$frame, null];
 
