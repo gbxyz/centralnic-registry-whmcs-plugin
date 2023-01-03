@@ -7,4 +7,4 @@ It implements many more of the available plugin functions, and also has a modicu
 
 ## Copyright
 
-Copyright 2022 CentralNic Group PLC. All rights reserved.
+Copyright 2023 CentralNic Group PLC. All rights reserved.
