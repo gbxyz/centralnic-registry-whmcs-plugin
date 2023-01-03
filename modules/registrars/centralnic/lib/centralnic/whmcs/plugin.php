@@ -937,7 +937,7 @@ final class plugin {
         $addr->add($frame->create('cc', $params['cc']));
 
         if (isset($params['voice'])) $create->add($frame->create('voice', $params['voice']));
-        if (isset($params['fax'])) $create->add($frame->create('fax', $params['fax']));
+        if (isset($params['fax']) && strlen($params['fax']) > 0) $create->add($frame->create('fax', $params['fax']));
         $create->add($frame->create('email', $params['email']));
 
         $create->add($frame->create('authInfo'))
