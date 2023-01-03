@@ -70,6 +70,20 @@ class CentralNicWHMCSModuleTest extends TestCase {
     }
 
     /**
+     * return values from plugin functions had a standard structure,
+     * which this method tests
+     */
+    private function doStandardResultChecks($result) {
+        $this->assertIsArray($result, 'function returned an array');
+
+        $this->assertArrayHasKey('success', $result, "return array contains the 'success' key");
+
+        $this->assertIsBool($result['success'], 'success is a boolean');
+
+        $this->assertTrue($result['success'], 'success is true');
+    }
+
+    /**
      * Test Core Module Functions Exist
      *
      * This test confirms that the functions WHMCS recommend for all registrar
@@ -120,10 +134,19 @@ class CentralNicWHMCSModuleTest extends TestCase {
 
         $ref = new ReflectionMethod('\centralnic\whmcs\plugin', $function);
 
+        //
+        // check the number of parameters each method accepts
+        //
         $params = $ref->getParameters();
-        $this->assertCount(2, $params);
+        if (in_array($function, ['MetaData', 'getConfigArray'])) {
+            $pcount = 0;
 
-        var_export($params);
+        } else {
+            $pcount = 1;
+
+        }
+
+        $this->assertCount($pcount, $params);
 
         //
         // normally functions return arrays, but there are a few exceptions
@@ -141,7 +164,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
 
         $ret = $ref->getReturnType();
 
-        $this->assertTrue($ret instanceof ReflectionNamedType);
+        $this->assertInstanceOf('ReflectionNamedType', $ret);
 
         $this->assertEquals($expectedType, $ret->getName(), 'method return type matches');
     }
@@ -191,11 +214,95 @@ class CentralNicWHMCSModuleTest extends TestCase {
         $params['fullphonenumber']  = '+1.7035555555';
         $params['email']            = 'jdoe@example.com';
 
-        centralnic_RegisterDomain($params);
+        //
+        // ensure this array is sorted for later validation of server response
+        //
+        ksort($params, SORT_STRING);
 
-        $this->assertEquals(1000, self::getLastEPPResponseCode(), 'EPP <create> returned code 1000');
+        $this->doStandardResultChecks(centralnic_RegisterDomain($params));
+
+        try {
+            //
+            // get domain info from server
+            //
+            $info = \centralnic\whmcs\plugin::info($params['sld'].'.'.$params['tld']);
+
+            //
+            // this is what we expect the expiry date to be
+            //
+            $expectedExDate = gmdate('Y-m-d', gmmktime(
+                intval(gmdate('G')),
+                intval(gmdate('i')),
+                intval(gmdate('s')),
+                intval(gmdate('n')),
+                intval(gmdate('j')),
+                intval(gmdate('Y')) + $params['regperiod'],
+            ));
+
+            $exDate = gmdate('Y-m-d', strtotime($info->getElementsByTagName('exDate')->item(0)->textContent));
+
+            $this->assertEquals($expectedExDate, $exDate, 'Domain expiry date matches expected value');
+
+            //
+            // validate nameservers
+            //
+
+            $expectedNS = [];
+            foreach ($params as $k => $v) if (1 == preg_match('/^ns\d+$/', $k)) $expectedNS[] = strtolower($v);
+            sort($expectedNS, SORT_STRING);
+
+            $ns = [];
+            foreach ($info->getElementsByTagName('hostObj') as $el) $ns[] = strtolower($el->textContent);
+            sort($ns, SORT_STRING);
+
+            $this->assertEquals($expectedNS, $ns, 'nameservers match expected set');
+
+            //
+            // validate registrant
+            //
+
+            $registrant_id = $info->getElementsByTagName('registrant')->item(0)->textContent;
+            $registrant = \centralnic\whmcs\plugin::contactInfo($registrant_id);
+
+            $this->assertEquals($params['fullname'], $registrant->getElementsByTagName('name')->item(0)->textContent, 'registrant name matches');
+            $this->assertEquals($params['companyname'], $registrant->getElementsByTagName('org')->item(0)->textContent, 'company name name matches');
+
+            $expectedStreet = [];
+            foreach ($params as $k => $v) if (1 == preg_match('/^address\d+$/', $k)) $expectedStreet[] = $v;
+
+            $street = [];
+            foreach ($registrant->getElementsByTagName('street') as $el) $street[] = $el->textContent;
+
+            $this->assertEquals($expectedStreet, $street, 'street address matches');
+
+            $this->assertEquals($params['city'], $registrant->getElementsByTagName('city')->item(0)->textContent, 'city matches');
+            $this->assertEquals($params['state'], $registrant->getElementsByTagName('sp')->item(0)->textContent, 'state/province matches');
+            $this->assertEquals($params['postcode'], $registrant->getElementsByTagName('pc')->item(0)->textContent, 'postcode matches');
+            $this->assertEquals($params['country'], $registrant->getElementsByTagName('cc')->item(0)->textContent, 'country matches');
+            $this->assertEquals($params['fullphonenumber'], $registrant->getElementsByTagName('voice')->item(0)->textContent, 'voice matches');
+            $this->assertEquals($params['email'], $registrant->getElementsByTagName('email')->item(0)->textContent, 'email matches');
+
+            //
+            // validate contact objects
+            //
+
+            $contacts = [];
+            foreach ($info->getElementsByTagName('contact') as $el) $contacts[$el->getAttribute('type')] = $el->textContent;
+
+            foreach (['admin', 'tech', 'billing'] as $type) {
+                $this->assertArrayHasKey($type, $contacts, "{$type} contact exists");
+                $this->assertEquals($registrant_id, $contacts[$type], "{$type} contact matches registrant");
+            }
+
+        } catch (\centralnic\whmcs\error $e) {
+            fwrite(STDERR, $e->getMessage());
+
+        }
     }
 
+    /**
+     * not currently testable
+     */
     public function testTransferDomain() {
         $this->assertTrue(true);
     }
@@ -204,9 +311,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
         $params = self::standardFunctionParams();
         $params['regperiod'] = 1;
 
-        centralnic_RenewDomain($params);
-
-        $this->assertEquals(1000, self::getLastEPPResponseCode(), 'EPP <renew> returned code 1000');
+        $this->doStandardResultChecks(centralnic_RenewDomain($params));
     }
 
     public function testGetNameservers() {
@@ -233,9 +338,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
         $params['ns4'] = 'ns4.centralnic.org';
         $params['ns5'] = 'ns5.centralnic.org';
 
-        centralnic_SaveNameservers($params);
-
-        $this->assertEquals(1000, self::getLastEPPResponseCode(), 'EPP <update> returned code 1000');
+        $this->doStandardResultChecks(centralnic_SaveNameservers($params));
     }
 
     public function testGetRegistrarLock() {
@@ -243,6 +346,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
 
         $lock = centralnic_GetRegistrarLock($params);
 
+        $this->assertIsString($lock);
         $this->assertEquals($lock, 'unlocked');
     }
 
@@ -250,70 +354,130 @@ class CentralNicWHMCSModuleTest extends TestCase {
         $params = self::standardFunctionParams();
         $params['lockenabled'] = 'locked';
 
-        centralnic_SaveRegistrarLock($params);
-
-        $this->assertEquals(1000, self::getLastEPPResponseCode(), 'EPP <update> returned code 1000');
+        $this->doStandardResultChecks(centralnic_SaveRegistrarLock($params));
     }
 
     public function testRemoveRegistrarLock() {
         $params = self::standardFunctionParams();
         $params['lockenabled'] = 'unlocked';
 
-        centralnic_SaveRegistrarLock($params);
-
-        $this->assertEquals(1000, self::getLastEPPResponseCode(), 'EPP <update> returned code 1000');
+        $this->doStandardResultChecks(centralnic_SaveRegistrarLock($params));
     }
 
     public function testGetContactDetails() {
-        $this->assertTrue(true);
+        $params = self::standardFunctionParams();
+
+        $result = centralnic_GetContactDetails($params);
+
+        $this->assertIsArray($result, 'function returned an array');
+
+        foreach (['Registrant', 'Admin', 'Technical', 'Billing'] as $k) {
+            $this->assertArrayHasKey($k, $result, "return array contains '{$k}' key");
+            $this->assertIsArray($result[$k], "'{$k}' key is an array");
+
+            foreach (['Full Name', 'Company Name', 'Address 1', 'Address 2', 'Address 3', 'City', 'State', 'Postcode', 'Country', 'Phone Number', 'Email Address'] as $j) {
+                $this->assertArrayHasKey($j, $result[$k], "return array contains '{$j}' key");
+            }
+        }
     }
 
     public function testSaveContactDetails() {
-        $this->assertTrue(true);
+        $params = self::standardFunctionParams();
+
+        $info = [
+            'Full Name'     => 'New Person',
+            'Company Name'  => 'New Company',
+            'Address 1'     => 'New Street',
+            'Address 2'     => '',
+            'Address 3'     => '',
+            'City'          => 'Newtown',
+            'State'         => 'Newshire',
+            'Postcode'      => 'NE1 WPC',
+            'Country'       => 'GB',
+            'Phone Number'  => '+44.2033880600',
+            'Fax Number'    => '',
+            'Email Address' => 'test@centralnic.com',
+        ];
+
+        $params['contactdetails']['Registrant'] = $params['contactdetails']['Admin'] = $info;
+
+        $this->doStandardResultChecks(centralnic_SaveContactDetails($params));
     }
 
     public function testGetEPPCode() {
-        $this->assertTrue(true);
+        $params = self::standardFunctionParams();
+
+        $result = centralnic_GetEPPCode($params);
+
+        $this->assertIsArray($result, 'function returned an array');
+        $this->assertArrayHasKey('eppcode', $result, 'return array contains EPP code');
+        $this->assertIsString($result['eppcode'], 'EPP code is a string');
     }
 
     public function testRegisterNameserver() {
-        $this->assertTrue(true);
+        $params = self::standardFunctionParams();
+
+        $params['nameserver'] = 'nameserver-test.'.$params['sld'].'.'.$params['tld'];
+        $params['ipaddress'] = '193.105.170.1';
+
+        $this->doStandardResultChecks(centralnic_RegisterNameserver($params));
     }
 
     public function testModifyNameserver() {
-        $this->assertTrue(true);
+        $params = self::standardFunctionParams();
+
+        $params['nameserver'] = 'nameserver-test.'.$params['sld'].'.'.$params['tld'];
+        $params['currentipaddress'] = '193.105.170.1';
+        $params['newipaddress'] = '193.105.170.2';
+
+        $this->doStandardResultChecks(centralnic_ModifyNameserver($params));
     }
 
     public function testDeleteNameserver() {
-        $this->assertTrue(true);
+        $params = self::standardFunctionParams();
+        $params['nameserver'] = 'nameserver-test.'.$params['sld'].'.'.$params['tld'];
+
+        $this->doStandardResultChecks(centralnic_DeleteNameserver($params));
     }
 
     public function testSync() {
-        $this->assertTrue(true);
+        $params = self::standardFunctionParams();
+
+        $result = centralnic_Sync($params);
+
+        $this->assertIsArray($result, 'function returned an array');
+
+        foreach (['expirydate', 'active', 'expired', 'transferredAway'] as $k) {
+            $this->assertArrayHasKey($k, $result, "return array contains '{$k}' key");
+        }
+
+        $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $result['expirydate']);
+
+        $this->assertIsBool($result['active']);
+        $this->assertTrue($result['active']);
+
+        $this->assertIsBool($result['expired']);
+        $this->assertFalse($result['expired']);
+
+        $this->assertIsBool($result['transferredAway']);
+        $this->assertFalse($result['transferredAway']);
     }
 
+    /**
+     * not currently testable
+     */
     public function testTransferSync() {
         $this->assertTrue(true);
     }
 
+    /**
+     * not currently testable
+     */
     public function testCheckAvailability() {
         $this->assertTrue(true);
     }
 
     public function testRequestDelete() {
-        $params = [
-            'testMode'              => 1,
-            'ResellerHandle'        => self::$params['ResellerHandle'],
-            'ResellerAPIPassword'   => self::$params['ResellerAPIPassword'],
-            'sld'                   => self::$sld,
-            'tld'                   => self::$params['TestTLD'],
-            'regperiod'             => 1,
-        ];
-
-        centralnic_RequestDelete($params);
-
-        $response = \centralnic\whmcs\plugin::connection()->getLastResponse();
-
-        $this->assertLessThanOrEqual(1999, $response->getElementsByTagName('result')->item(0)->getAttribute('code'), 'EPP <delete> returned code 1999 or lower');
+        $this->doStandardResultChecks(centralnic_RequestDelete(self::standardFunctionParams()));
     }
 }
