@@ -983,6 +983,9 @@ final class plugin {
         return self::connection()->request($frame);
     }
 
+    /**
+     * get the last response from the server
+     */
     public function getLastResponse() : xml\frame {
         return self::connection()->getLastResponse();
     }
