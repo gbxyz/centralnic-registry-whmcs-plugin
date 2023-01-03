@@ -32,6 +32,8 @@ class epp {
 
     private array $log = [];
 
+    public bool $debug = false;
+
     public function __construct(string $host, string $id, string $pw) {
         $this->connect($host);
         $this->login($id, $pw);
@@ -119,6 +121,7 @@ class epp {
                     }
                 }
             } else {
+                if ($this->debug) fwrite(STDERR, $frame->saveXML());
                 return $frame;
             }
         }
@@ -133,6 +136,8 @@ class epp {
         }
 
         $xml = $frame->saveXML();
+
+        if ($this->debug) fwrite(STDERR, $xml);
 
         fwrite(
             $this->socket,
