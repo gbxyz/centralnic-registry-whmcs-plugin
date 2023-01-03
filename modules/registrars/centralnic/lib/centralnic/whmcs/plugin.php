@@ -179,8 +179,9 @@ final class plugin {
         //
         $ns = $create->add($frame->create('ns'));
         for ($i = 1 ; $i <= 5 ; $i++) {
-            if (isset($params["ns{$i}"]) && strlen($params["ns{$i}"]) > 0) {
-                $ns->add($frame->create('hostObj', $params["ns{$i}"]));
+            $k = sprintf('ns%u', $i);
+            if (isset($params[$k]) && strlen($params[$k]) > 0) {
+                $ns->add($frame->create('hostObj', $params[$k]));
             }
         }
         if ($ns->childNodes->length < 1) $create->removeChild($ns);
