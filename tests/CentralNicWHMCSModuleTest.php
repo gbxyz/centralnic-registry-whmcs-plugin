@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use PHPUnit\Framework\TestCase;
 
 class CentralNicWHMCSModuleTest extends TestCase {
@@ -17,35 +19,11 @@ class CentralNicWHMCSModuleTest extends TestCase {
         self::$sld = substr(strtolower(__CLASS__.'-test-'.uniqid()), 0, 63);
     }
 
-    protected static function standardFunctionParams() : array {
-        return [
-            'testMode'              => 1,
-            'ResellerHandle'        => self::$params['ResellerHandle'],
-            'ResellerAPIPassword'   => self::$params['ResellerAPIPassword'],
-            'sld'                   => self::$sld,
-            'tld'                   => self::$params['TestTLD'],
-        ];
-    }
-
-    protected function getLastEPPResponseCode() : int {
-        $response = \centralnic\whmcs\plugin::connection()->getLastResponse();
-
-        return intval($response->getElementsByTagName('result')->item(0)->getAttribute('code'));
-    }
-
-    public static function providerCoreFunctionNames() {
-        return [
-            ['RegisterDomain'],
-            ['TransferDomain'],
-            ['RenewDomain'],
-            ['GetNameservers'],
-            ['SaveNameservers'],
-            ['GetContactDetails'],
-            ['SaveContactDetails'],
-        ];
-    }
-
-    public static function providerAllFunctionNames() {
+    /**
+     * this is a data provider allowing us to validate the existence of all the
+     * module functions
+     */
+    public static function FunctionNamesProvider() {
         return [
             ['MetaData'],
             ['getConfigArray'],
@@ -70,6 +48,19 @@ class CentralNicWHMCSModuleTest extends TestCase {
     }
 
     /**
+     * this returns a set of common function parameters common to all module functions
+     */
+    protected static function standardFunctionParams() : array {
+        return [
+            'testMode'              => 1,
+            'ResellerHandle'        => self::$params['ResellerHandle'],
+            'ResellerAPIPassword'   => self::$params['ResellerAPIPassword'],
+            'sld'                   => self::$sld,
+            'tld'                   => self::$params['TestTLD'],
+        ];
+    }
+
+    /**
      * return values from plugin functions had a standard structure,
      * which this method tests
      */
@@ -83,32 +74,17 @@ class CentralNicWHMCSModuleTest extends TestCase {
         $this->assertTrue($result['success'], 'success is true');
     }
 
-    /**
-     * Test Core Module Functions Exist
+    /*
      *
-     * This test confirms that the functions WHMCS recommend for all registrar
-     * modules are defined for the module
+     * tests from here onwards
      *
-     * @param $function
-     *
-     * @dataProvider providerCoreFunctionNames
      */
-    public function testCoreModuleFunctionsExist($function) {
-        $this->assertTrue(function_exists('centralnic_' . $function), 'core function exists');
-    }
 
     /**
-     * Test all Module Functions Exist
-     *
-     * This test confirms that all functions for registrar
-     * modules are defined for the module
-     *
-     * @param $function
-     *
-     * @dataProvider providerAllFunctionNames
+     * @dataProvider FunctionNamesProvider
      */
-    public function testAllModuleFunctionsExist($function) {
-        $this->assertTrue(function_exists('centralnic_' . $function), 'extended function exists');
+    public function testModuleFunctionsExist($function) {
+        $this->assertTrue(function_exists('centralnic_' . $function), 'module function exists');
     }
 
     /**
@@ -119,7 +95,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
      *
      * @param $function
      *
-     * @dataProvider providerAllFunctionNames
+     * @dataProvider FunctionNamesProvider
      */
     public function testModuleFunctionMethods($function) {
         $this->assertTrue(method_exists('\centralnic\whmcs\plugin', $function), 'module method exists');
@@ -128,7 +104,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
     /**
      * Test the signatures of each method
      *
-     * @dataProvider providerAllFunctionNames
+     * @dataProvider FunctionNamesProvider
      */
     public function testModuleMethodSignatures($function) {
 
@@ -399,6 +375,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
             'Email Address' => 'test@centralnic.com',
         ];
 
+        $params['contactdetails'] = [];
         $params['contactdetails']['Registrant'] = $params['contactdetails']['Admin'] = $info;
 
         $this->doStandardResultChecks(centralnic_SaveContactDetails($params));
