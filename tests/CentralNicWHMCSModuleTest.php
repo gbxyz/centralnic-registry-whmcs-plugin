@@ -112,8 +112,6 @@ class CentralNicWHMCSModuleTest extends TestCase {
      * which this method tests
      */
     private function doStandardResultChecks($result) {
-        var_export($result);
-
         $this->assertIsArray($result, 'function returned an array');
 
         $this->assertArrayHasKey('success', $result, "return array contains the 'success' key");
