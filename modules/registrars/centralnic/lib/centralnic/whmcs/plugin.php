@@ -73,6 +73,8 @@ final class plugin {
 	const prod_host         = 'epp.'.self::registry_domain;
 	const test_host         = 'epp-ote.'.self::registry_domain;
 
+    public static bool $debug = false;
+
     private static epp $epp;
 
     /**
@@ -852,6 +854,9 @@ final class plugin {
             $params['ResellerHandle'],
             $params['ResellerAPIPassword']
         );
+
+        self::$epp->debug = &self::$debug;
+
         return self::$epp;
     }
 
