@@ -217,7 +217,7 @@ final class plugin {
             $extension = $frame->first('command')->add($frame->create('extension'));
             $fee = $extension->add($frame->nsCreate(epp::xmlns_fee, epp::create));
             $fee->add($frame->create('currency', $params['BillingCurrency']));
-            $fee->add($frame->create('fee', floatval($params['premiumCost'])));
+            $fee->add($frame->create('fee', strval($params['premiumCost'])));
         }
 
         $epp->request($frame);
@@ -251,7 +251,7 @@ final class plugin {
             $extension = $frame->first('command')->add($frame->create('extension'));
             $fee = $extension->add($frame->nsCreate(epp::xmlns_fee, epp::transfer));
             $fee->add($frame->create('currency', $params['BillingCurrency']));
-            $fee->add($frame->create('fee', floatval($params['premiumCost'])));
+            $fee->add($frame->create('fee', strval($params['premiumCost'])));
         }
 
         $epp->request($frame);
@@ -287,7 +287,7 @@ final class plugin {
             $extension = $frame->first('command')->add($frame->create('extension'));
             $fee = $extension->add($frame->nsCreate(epp::xmlns_fee, epp::renew));
             $fee->add($frame->create('currency', $params['BillingCurrency']));
-            $fee->add($frame->create('fee', floatval($params['premiumCost'])));
+            $fee->add($frame->create('fee', strval($params['premiumCost'])));
         }
 
         $epp->request($frame);
