@@ -195,8 +195,4 @@ class epp {
             }
         }
     }
-
-    public function getLastResponse() : xml\frame {
-        return $this->log[count($this->log)-1][1];
-    }
 }
