@@ -57,7 +57,10 @@ function magic() {
         //
         // return an error to the caller
         //
-        return ['error' => $e->getMessage()];
+        return [
+            'success'   => false,
+            'error'     => $e->getMessage(),
+        ];
     }
 }
 
