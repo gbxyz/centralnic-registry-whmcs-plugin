@@ -34,3 +34,8 @@ function logModuleCall(
 ) {
     // do nothing during tests
 }
+
+include __DIR__.'/_whmcs-shim.php';
+
+use WHMCS\Domains\DomainLookup\STATUS_NOT_REGISTERED;
+use WHMCS\Domains\DomainLookup\STATUS_REGISTERED;
