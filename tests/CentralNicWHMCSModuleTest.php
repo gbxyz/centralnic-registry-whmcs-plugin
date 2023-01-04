@@ -16,19 +16,23 @@ class CentralNicWHMCSModuleTest extends TestCase {
     protected static string $sld;
 
     public static function setUpBeforeClass() : void {
+        global $argv;
+
         $file = __DIR__.'/config.ini';
         if (file_exists($file)) {
             self::$params = parse_ini_file($file, false);
         }
 
         self::$sld = substr(strtolower(__CLASS__.'-test-'.uniqid()), 0, 63);
+
+        \centralnic\whmcs\plugin::$debug = in_array('--verbose', $argv);
     }
 
     /**
      * this is a data provider allowing us to validate the existence of all the
      * module functions
      */
-    public static function FunctionNamesProvider() {
+    public static function functionNamesProvider() : array {
         return [
             ['MetaData'],
             ['getConfigArray'],
@@ -52,6 +56,40 @@ class CentralNicWHMCSModuleTest extends TestCase {
         ];
     }
 
+    public static function availabilitySearchDataProvider() : array {
+        return [
+            [
+                'sld'       => 'this-domain-is-not-registered',
+                'tld'       => 'uk.com',
+                'avail'     => true,
+                'premium'   => false,
+            ],
+            [
+                'sld'       => 'example',
+                'tld'       => 'uk.com',
+                'avail'     => false,
+                'premium'   => false,
+            ],
+            [
+                'sld'       => 'aa',
+                'tld'       => 'uk.com',
+                'avail'     => true,
+                'premium'   => true,
+                'register'  => 99,
+                'renew'     => 16.25,
+            ],
+            [
+                'sld'       => 'ab',
+                'tld'       => 'uk.com',
+                'avail'     => false,
+                'premium'   => true,
+                'register'  => 99,
+                'renew'     => 16.25,
+            ],
+        ];
+
+    }
+
     /**
      * this returns a set of common function parameters common to all module functions
      */
@@ -60,8 +98,12 @@ class CentralNicWHMCSModuleTest extends TestCase {
             'testMode'              => 1,
             'ResellerHandle'        => self::$params['ResellerHandle'],
             'ResellerAPIPassword'   => self::$params['ResellerAPIPassword'],
+            'BillingCurrency'       => self::$params['BillingCurrency'],
             'sld'                   => self::$sld,
             'tld'                   => self::$params['TestTLD'],
+            'nameserver'            => 'nameserver-test.'.self::$sld.'.'.self::$params['TestTLD'],
+            'premiumEnabled'        => true,
+            'premiumCost'           => self::$params['PremiumCost'],
         ];
     }
 
@@ -70,6 +112,8 @@ class CentralNicWHMCSModuleTest extends TestCase {
      * which this method tests
      */
     private function doStandardResultChecks($result) {
+        var_export($result);
+
         $this->assertIsArray($result, 'function returned an array');
 
         $this->assertArrayHasKey('success', $result, "return array contains the 'success' key");
@@ -86,9 +130,9 @@ class CentralNicWHMCSModuleTest extends TestCase {
      */
 
     /**
-     * @dataProvider FunctionNamesProvider
+     * @dataProvider functionNamesProvider
      */
-    public function testModuleFunctionsExist($function) {
+    public function test_ModuleFunctionsExist($function) {
         $this->assertTrue(function_exists('centralnic_' . $function), 'module function exists');
     }
 
@@ -100,18 +144,18 @@ class CentralNicWHMCSModuleTest extends TestCase {
      *
      * @param $function
      *
-     * @dataProvider FunctionNamesProvider
+     * @dataProvider functionNamesProvider
      */
-    public function testModuleFunctionMethods($function) {
+    public function test_ModuleFunctionMethods($function) {
         $this->assertTrue(method_exists('\centralnic\whmcs\plugin', $function), 'module method exists');
     }
 
     /**
      * Test the signatures of each method
      *
-     * @dataProvider FunctionNamesProvider
+     * @dataProvider functionNamesProvider
      */
-    public function testModuleMethodSignatures($function) {
+    public function test_ModuleMethodSignatures($function) {
 
         $ref = new ReflectionMethod('\centralnic\whmcs\plugin', $function);
 
@@ -150,7 +194,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
         $this->assertEquals($expectedType, $ret->getName(), 'method return type matches');
     }
 
-    public function testMetaData() {
+    public function test_MetaData() {
         $array = centralnic_MetaData();
         $this->assertIsArray($array, 'MetaData() returns an array');
         $this->assertCount(2, $array, 'array returned by MetaData() contains two members');
@@ -158,7 +202,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
         $this->assertNotEmpty($array['APIVersion'], 'APIVersion present in MetaData() return array');
     }
 
-    public function testgetConfigArray() {
+    public function test_getConfigArray() {
         $array = centralnic_getConfigArray();
         $this->assertIsArray($array, 'GetConfig() returns an array');
         $this->assertCount(4, $array, 'array returned by GetConfig() contains 4 members');
@@ -168,21 +212,21 @@ class CentralNicWHMCSModuleTest extends TestCase {
         $this->assertNotEmpty($array['BillingCurrency'], 'required config option exists in return array');
     }
 
-    public function testParams() {
+    public function test_Params() {
         foreach (['ResellerHandle', 'ResellerAPIPassword', 'TestTLD'] as $k) {
             $this->assertNotEmpty(self::$params[$k], 'test config contains required parameter "{$k}"');
         }
     }
 
-    public function testRegisterDomain() {
+    public function test_RegisterDomain() {
         $params = self::standardFunctionParams();
+
         $params['regperiod']        = 1;
 
         $params['ns1']              = 'ns1.centralnic.net';
         $params['ns2']              = 'ns2.centralnic.net';
         $params['ns3']              = 'ns3.centralnic.net';
         $params['ns4']              = 'ns4.centralnic.net';
-        $params['ns5']              = 'ns5.centralnic.net';
 
         $params['fullname']         = 'John Doe';
         $params['companyname']      = 'Example Inc.';
@@ -200,102 +244,102 @@ class CentralNicWHMCSModuleTest extends TestCase {
         //
         ksort($params, SORT_STRING);
 
+        //
+        // check return value from the module function
+        //
         $this->doStandardResultChecks(centralnic_RegisterDomain($params));
 
-        try {
-            //
-            // get domain info from server
-            //
-            $info = \centralnic\whmcs\plugin::info($params['sld'].'.'.$params['tld']);
+        //
+        // check the state of the domain
+        //
 
-            //
-            // this is what we expect the expiry date to be
-            //
-            $expectedExDate = gmdate('Y-m-d', gmmktime(
-                intval(gmdate('G')),
-                intval(gmdate('i')),
-                intval(gmdate('s')),
-                intval(gmdate('n')),
-                intval(gmdate('j')),
-                intval(gmdate('Y')) + $params['regperiod'],
-            ));
+        $info = \centralnic\whmcs\plugin::info($params['sld'].'.'.$params['tld']);
 
-            $exDate = gmdate('Y-m-d', strtotime($info->getElementsByTagName('exDate')->item(0)->textContent));
+        //
+        // validate expiry date
+        //
 
-            $this->assertEquals($expectedExDate, $exDate, 'Domain expiry date matches expected value');
+        $expectedExDate = gmdate('Y-m-d', gmmktime(
+            intval(gmdate('G')),
+            intval(gmdate('i')),
+            intval(gmdate('s')),
+            intval(gmdate('n')),
+            intval(gmdate('j')),
+            intval(gmdate('Y')) + $params['regperiod'],
+        ));
 
-            //
-            // validate nameservers
-            //
+        $exDate = gmdate('Y-m-d', strtotime($info->getElementsByTagName('exDate')->item(0)->textContent));
 
-            $expectedNS = [];
-            foreach ($params as $k => $v) if (1 == preg_match('/^ns\d+$/', $k)) $expectedNS[] = strtolower($v);
-            sort($expectedNS, SORT_STRING);
+        $this->assertEquals($expectedExDate, $exDate, 'Domain expiry date matches expected value');
 
-            $ns = [];
-            foreach ($info->getElementsByTagName('hostObj') as $el) $ns[] = strtolower($el->textContent);
-            sort($ns, SORT_STRING);
+        //
+        // validate nameservers
+        //
 
-            $this->assertEquals($expectedNS, $ns, 'nameservers match expected set');
+        $expectedNS = [];
+        foreach ($params as $k => $v) if (1 == preg_match('/^ns\d+$/', $k)) $expectedNS[] = strtolower($v);
+        sort($expectedNS, SORT_STRING);
 
-            //
-            // validate registrant
-            //
+        $ns = [];
+        foreach ($info->getElementsByTagName('hostObj') as $el) $ns[] = strtolower($el->textContent);
+        sort($ns, SORT_STRING);
 
-            $registrant_id = $info->getElementsByTagName('registrant')->item(0)->textContent;
-            $registrant = \centralnic\whmcs\plugin::contactInfo($registrant_id);
+        $this->assertEquals($expectedNS, $ns, 'nameservers match expected set');
 
-            $this->assertEquals($params['fullname'], $registrant->getElementsByTagName('name')->item(0)->textContent, 'registrant name matches');
-            $this->assertEquals($params['companyname'], $registrant->getElementsByTagName('org')->item(0)->textContent, 'company name name matches');
+        //
+        // validate registrant
+        //
 
-            $expectedStreet = [];
-            foreach ($params as $k => $v) if (1 == preg_match('/^address\d+$/', $k)) $expectedStreet[] = $v;
+        $registrant_id = $info->getElementsByTagName('registrant')->item(0)->textContent;
+        $registrant = \centralnic\whmcs\plugin::contactInfo($registrant_id);
 
-            $street = [];
-            foreach ($registrant->getElementsByTagName('street') as $el) $street[] = $el->textContent;
+        $this->assertEquals($params['fullname'],    $registrant->getElementsByTagName('name')->item(0)->textContent, 'registrant name matches');
+        $this->assertEquals($params['companyname'], $registrant->getElementsByTagName('org')->item(0)->textContent, 'company name name matches');
 
-            $this->assertEquals($expectedStreet, $street, 'street address matches');
+        $expectedStreet = [];
+        foreach ($params as $k => $v) if (1 == preg_match('/^address\d+$/', $k)) $expectedStreet[] = $v;
 
-            $this->assertEquals($params['city'], $registrant->getElementsByTagName('city')->item(0)->textContent, 'city matches');
-            $this->assertEquals($params['state'], $registrant->getElementsByTagName('sp')->item(0)->textContent, 'state/province matches');
-            $this->assertEquals($params['postcode'], $registrant->getElementsByTagName('pc')->item(0)->textContent, 'postcode matches');
-            $this->assertEquals($params['country'], $registrant->getElementsByTagName('cc')->item(0)->textContent, 'country matches');
-            $this->assertEquals($params['fullphonenumber'], $registrant->getElementsByTagName('voice')->item(0)->textContent, 'voice matches');
-            $this->assertEquals($params['email'], $registrant->getElementsByTagName('email')->item(0)->textContent, 'email matches');
+        $street = [];
+        foreach ($registrant->getElementsByTagName('street') as $el) $street[] = $el->textContent;
 
-            //
-            // validate contact objects
-            //
+        $this->assertEquals($expectedStreet, $street, 'street address matches');
 
-            $contacts = [];
-            foreach ($info->getElementsByTagName('contact') as $el) $contacts[$el->getAttribute('type')] = $el->textContent;
+        $this->assertEquals($params['city'],            $registrant->getElementsByTagName('city')->item(0)->textContent, 'city matches');
+        $this->assertEquals($params['state'],           $registrant->getElementsByTagName('sp')->item(0)->textContent, 'state/province matches');
+        $this->assertEquals($params['postcode'],        $registrant->getElementsByTagName('pc')->item(0)->textContent, 'postcode matches');
+        $this->assertEquals($params['country'],         $registrant->getElementsByTagName('cc')->item(0)->textContent, 'country matches');
+        $this->assertEquals($params['fullphonenumber'], $registrant->getElementsByTagName('voice')->item(0)->textContent, 'voice matches');
+        $this->assertEquals($params['email'],           $registrant->getElementsByTagName('email')->item(0)->textContent, 'email matches');
 
-            foreach (['admin', 'tech', 'billing'] as $type) {
-                $this->assertArrayHasKey($type, $contacts, "{$type} contact exists");
-                $this->assertEquals($registrant_id, $contacts[$type], "{$type} contact matches registrant");
-            }
+        //
+        // validate contact objects
+        //
 
-        } catch (\centralnic\whmcs\error $e) {
-            fwrite(STDERR, $e->getMessage());
+        $contacts = [];
+        foreach ($info->getElementsByTagName('contact') as $el) $contacts[$el->getAttribute('type')] = $el->textContent;
 
+        foreach (['admin', 'tech', 'billing'] as $type) {
+            $this->assertArrayHasKey($type, $contacts, "{$type} contact exists");
+            $this->assertEquals($registrant_id, $contacts[$type], "{$type} contact matches registrant");
         }
     }
 
     /**
      * not currently testable
      */
-    public function testTransferDomain() {
+    public function test_TransferDomain() {
         $this->assertTrue(true);
     }
 
-    public function testRenewDomain() {
+    public function test_RenewDomain() {
         $params = self::standardFunctionParams();
+
         $params['regperiod'] = 1;
 
         $this->doStandardResultChecks(centralnic_RenewDomain($params));
     }
 
-    public function testGetNameservers() {
+    public function test_GetNameservers() {
         $params = self::standardFunctionParams();
 
         $ns = centralnic_GetNameservers($params);
@@ -307,7 +351,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
         }
     }
 
-    public function testSaveNameservers() {
+    public function test_SaveNameservers() {
         $params = self::standardFunctionParams();
 
         //
@@ -316,39 +360,50 @@ class CentralNicWHMCSModuleTest extends TestCase {
         $params['ns1'] = 'ns1.centralnic.org';
         $params['ns2'] = 'ns2.centralnic.org';
         $params['ns3'] = 'ns3.centralnic.org';
-        $params['ns4'] = 'ns4.centralnic.org';
-        $params['ns5'] = 'ns5.centralnic.org';
 
+        //
+        // check return value from the module function
+        //
         $this->doStandardResultChecks(centralnic_SaveNameservers($params));
+
+        $info = \centralnic\whmcs\plugin::info($params['sld'].'.'.$params['tld']);
+
+        $expectedNS = [];
+        foreach ($params as $k => $v) if (1 == preg_match('/^ns\d+$/', $k)) $expectedNS[] = strtolower($v);
+        sort($expectedNS, SORT_STRING);
+
+        $ns = [];
+        foreach ($info->getElementsByTagName('hostObj') as $el) $ns[] = strtolower($el->textContent);
+        sort($ns, SORT_STRING);
+
+        $this->assertEquals($expectedNS, $ns, 'nameservers match expected set');
     }
 
-    public function testGetRegistrarLock() {
-        $params = self::standardFunctionParams();
-
-        $lock = centralnic_GetRegistrarLock($params);
+    public function test_GetRegistrarLock() {
+        $lock = centralnic_GetRegistrarLock(self::standardFunctionParams());
 
         $this->assertIsString($lock);
         $this->assertEquals($lock, 'unlocked');
     }
 
-    public function testAddRegistrarLock() {
+    public function test_AddRegistrarLock() {
         $params = self::standardFunctionParams();
+
         $params['lockenabled'] = 'locked';
 
         $this->doStandardResultChecks(centralnic_SaveRegistrarLock($params));
     }
 
-    public function testRemoveRegistrarLock() {
+    public function test_RemoveRegistrarLock() {
         $params = self::standardFunctionParams();
+
         $params['lockenabled'] = 'unlocked';
 
         $this->doStandardResultChecks(centralnic_SaveRegistrarLock($params));
     }
 
-    public function testGetContactDetails() {
-        $params = self::standardFunctionParams();
-
-        $result = centralnic_GetContactDetails($params);
+    public function test_GetContactDetails() {
+        $result = centralnic_GetContactDetails(self::standardFunctionParams());
 
         $this->assertIsArray($result, 'function returned an array');
 
@@ -358,14 +413,15 @@ class CentralNicWHMCSModuleTest extends TestCase {
 
             foreach (['Full Name', 'Company Name', 'Address 1', 'Address 2', 'Address 3', 'City', 'State', 'Postcode', 'Country', 'Phone Number', 'Email Address'] as $j) {
                 $this->assertArrayHasKey($j, $result[$k], "return array contains '{$j}' key");
+                $this->assertIsString($result[$k][$j]);
             }
         }
     }
 
-    public function testSaveContactDetails() {
+    public function test_SaveContactDetails() {
         $params = self::standardFunctionParams();
 
-        $info = [
+        $contact = [
             'Full Name'     => 'New Person',
             'Company Name'  => 'New Company',
             'Address 1'     => 'New Street',
@@ -380,49 +436,46 @@ class CentralNicWHMCSModuleTest extends TestCase {
             'Email Address' => 'test@centralnic.com',
         ];
 
-        $params['contactdetails'] = [];
-        $params['contactdetails']['Registrant'] = $params['contactdetails']['Admin'] = $info;
+        $params['contactdetails'] = [
+            'Registrant'    => $contact,
+            'Admin'         => $contact,
+            'Technical'     => $contact,
+            'Billing'       => $contact,
+        ];
 
         $this->doStandardResultChecks(centralnic_SaveContactDetails($params));
     }
 
-    public function testGetEPPCode() {
-        $params = self::standardFunctionParams();
-
-        $result = centralnic_GetEPPCode($params);
+    public function test_GetEPPCode() {
+        $result = centralnic_GetEPPCode(self::standardFunctionParams());
 
         $this->assertIsArray($result, 'function returned an array');
         $this->assertArrayHasKey('eppcode', $result, 'return array contains EPP code');
         $this->assertIsString($result['eppcode'], 'EPP code is a string');
     }
 
-    public function testRegisterNameserver() {
+    public function test_RegisterNameserver() {
         $params = self::standardFunctionParams();
 
-        $params['nameserver'] = 'nameserver-test.'.$params['sld'].'.'.$params['tld'];
         $params['ipaddress'] = '193.105.170.1';
 
         $this->doStandardResultChecks(centralnic_RegisterNameserver($params));
     }
 
-    public function testModifyNameserver() {
+    public function test_ModifyNameserver() {
         $params = self::standardFunctionParams();
 
-        $params['nameserver'] = 'nameserver-test.'.$params['sld'].'.'.$params['tld'];
         $params['currentipaddress'] = '193.105.170.1';
-        $params['newipaddress'] = '193.105.170.2';
+        $params['newipaddress']     = '193.105.170.2';
 
         $this->doStandardResultChecks(centralnic_ModifyNameserver($params));
     }
 
-    public function testDeleteNameserver() {
-        $params = self::standardFunctionParams();
-        $params['nameserver'] = 'nameserver-test.'.$params['sld'].'.'.$params['tld'];
-
-        $this->doStandardResultChecks(centralnic_DeleteNameserver($params));
+    public function test_DeleteNameserver() {
+        $this->doStandardResultChecks(centralnic_DeleteNameserver(self::standardFunctionParams()));
     }
 
-    public function testSync() {
+    public function test_Sync() {
         $params = self::standardFunctionParams();
 
         $result = centralnic_Sync($params);
@@ -448,18 +501,48 @@ class CentralNicWHMCSModuleTest extends TestCase {
     /**
      * not currently testable
      */
-    public function testTransferSync() {
+    public function test_TransferSync() {
         $this->assertTrue(true);
     }
 
     /**
-     * not currently testable
+     * @dataProvider availabilitySearchDataProvider
      */
-    public function testCheckAvailability() {
+    public function test_CheckAvailability(string $sld, string $tld, bool $avail, bool $premium, $registerPrice=NULL, $renewPrice=NULL) {
         $this->assertTrue(true);
+
+        $params = self::standardFunctionParams();
+
+        $params['searchTerm'] = $sld;
+        $params['tldsToInclude'] = [$tld];
+
+        $result = centralnic_CheckAvailability($params);
+
+        $this->assertInstanceOf('WHMCS\Domains\DomainLookup\ResultsList', $result);
+        $this->assertInstanceOf('WHMCS\Domains\DomainLookup\SearchResult', $result->results[0]);
+
+        $this->assertEquals($result->results[0]->sld, $sld);
+        $this->assertEquals($result->results[0]->tld, $tld);
+
+        $this->assertObjectHasAttribute('status', $result->results[0]);
+        $this->assertEquals($result->results[0]->status, $avail);
+
+        $this->assertObjectHasAttribute('premium', $result->results[0]);
+        $this->assertEquals($result->results[0]->premium, $premium);
+
+        if (true === $premium) {
+            $this->assertObjectHasAttribute('pricing', $result->results[0]);
+            $this->assertIsArray($result->results[0]->pricing);
+
+            $this->assertArrayHasKey('register', $result->results[0]->pricing);
+            $this->assertEquals($result->results[0]->pricing['register'], $registerPrice);
+
+            $this->assertArrayHasKey('renew', $result->results[0]->pricing);
+            $this->assertEquals($result->results[0]->pricing['renew'], $renewPrice);
+        }
     }
 
-    public function testRequestDelete() {
+    public function test_RequestDelete() {
         $this->doStandardResultChecks(centralnic_RequestDelete(self::standardFunctionParams()));
     }
 }
