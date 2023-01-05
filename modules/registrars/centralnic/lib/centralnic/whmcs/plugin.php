@@ -89,7 +89,7 @@ final class plugin {
      * this maps low-level contact types to human-readable descriptions used
      * in GetContactDetails() and SaveContactDetails()
      */
-    private static array $contactDetailsMap = [
+    private static array $contactTypeMap = [
         'registrant'    => 'Registrant',
         'admin'         => 'Admin',
         'tech'          => 'Technical',
@@ -152,7 +152,7 @@ final class plugin {
         // create contact objects
         //
         $contacts = [];
-        foreach (array_keys(self::$contactDetailsMap) as $type) {
+        foreach (array_keys(self::$contactTypeMap) as $type) {
             $prefix = ('registrant' == $type ? '' : $type);
 
             if (!isset($params[$prefix.'email'])) {
@@ -215,8 +215,8 @@ final class plugin {
 
         $create->add($frame->create('registrant', $contacts['registrant']));
 
-        foreach (['admin', 'tech', 'billing'] as $type) {
-            $create->add($frame->create('contact', $contacts[$type]))
+        foreach (preg_grep('/^registrant$/', array_keys(self::$contactTypeMap), PREG_GREP_INVERT) as $type) {
+            $create->add($frame->create('contact', $contacts[$type] ?? $contacts['registrant']))
                 ->setAttribute('type', $type);
         }
 
@@ -438,7 +438,7 @@ final class plugin {
 
         $response = [];
 
-        foreach (self::$contactDetailsMap as $type => $name) {
+        foreach (self::$contactTypeMap as $type => $name) {
             foreach ($contacts as $id => $roles) {
                 if (in_array($type, $roles) && isset($cinfo[$id])) {
                     $postalInfo = [];
@@ -478,7 +478,7 @@ final class plugin {
         // create new contact objects
         //
         $new = [];
-        foreach (self::$contactDetailsMap as $type => $name) {
+        foreach (self::$contactTypeMap as $type => $name) {
             if (isset($params['contactdetails'][$name])) {
                 $new[$type] = self::createContact([
                     'name'      => $params['contactdetails'][$name]['Full Name'],
@@ -515,7 +515,7 @@ final class plugin {
         // add <add> element for new contacts
         //
         $add = $update->add($frame->create('add'));
-        foreach (['admin', 'tech', 'billing'] as $type) {
+        foreach (preg_grep('/^registrant$/', array_keys(self::$contactTypeMap), PREG_GREP_INVERT) as $type) {
             if (isset($new[$type])) {
                 $add->add($frame->create('contact', $new[$type]))->setAttribute('type', $type);
             }
