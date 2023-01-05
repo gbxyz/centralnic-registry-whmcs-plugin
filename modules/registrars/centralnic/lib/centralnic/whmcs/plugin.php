@@ -14,8 +14,8 @@ require __DIR__.'/epp.php';
 require __DIR__.'/frame.php';
 
 /**
- * this "magic" function avoids lots of boilerplate by dynamically calling the
- * appropriate static method with the provided arguments
+ * this "magic" function avoids lots of boilerplate in the plugin file by
+ * dynamically calling the appropriate static method with the provided arguments
  * so centralnic_FooBar($params) => \centralnic\whmcs\plugin::FooBar($params)
  */
 function magic() {
@@ -73,12 +73,21 @@ final class plugin {
 	const prod_host         = 'epp.'.self::registry_domain;
 	const test_host         = 'epp-ote.'.self::registry_domain;
 
+    //
+    // the $debug property of the EPP connection object is a
+    // reference to this property, so that it's easy to enable/disable
+    // debugging without giving access to the EPP connection object
+    //
     public static bool $debug = false;
 
+    //
+    // EPP connection object
+    //
     private static epp $epp;
 
     /**
-     * this maps low-level contact types to human-readable descriptions
+     * this maps low-level contact types to human-readable descriptions used
+     * in GetContactDetails() and SaveContactDetails()
      */
     private static array $contactDetailsMap = [
         'registrant'    => 'Registrant',
@@ -167,6 +176,10 @@ final class plugin {
                 ]);
             }
         }
+
+        //
+        // construct <create> frame
+        //
 
         $frame = new xml\frame;
 
@@ -442,7 +455,6 @@ final class plugin {
                         'State'         => $pinfo->first('sp')?->textContent ?? '',
                         'Postcode'      => $pinfo->first('pc')?->textContent ?? '',
                         'Country'       => $pinfo->first('cc')->textContent,
-
                         'Phone Number'  => $cinfo[$id]->first('voice')?->textContent ?? '',
                         'Fax Number'    => $cinfo[$id]->first('fax')?->textContent ?? '',
                         'Email Address' => $cinfo[$id]->first('email')->textContent,
@@ -607,6 +619,7 @@ final class plugin {
                         ->add($frame->create('pw', $pw));
 
         $epp->request($frame);
+
         return ['eppcode' => $pw];
     }
 
