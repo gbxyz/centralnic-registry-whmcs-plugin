@@ -155,10 +155,7 @@ final class plugin {
         foreach (array_keys(self::$contactTypeMap) as $type) {
             $prefix = ('registrant' == $type ? '' : $type);
 
-            if (!isset($params[$prefix.'email'])) {
-                $contacts[$type] = $contacts['registrant'];
-
-            } else {
+            if (isset($params[$prefix.'email'])) {
                 $contacts[$type] = self::createContact([
                     'name'      => $params[$prefix.'fullname'],
                     'org'       => $params[$prefix.'companyname'] ?? NULL,
@@ -776,6 +773,7 @@ final class plugin {
                 ];
 
             case 'pending':
+            default:
                 return [];
         }
     }
