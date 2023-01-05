@@ -162,13 +162,25 @@ class epp {
      */
     public function request(xml\frame $frame) : xml\frame {
 
+        //
+        // log the command
+        //
         $this->log[] = [$frame, null];
 
+        //
+        // send the frame to the server and get the response
+        //
         $this->sendFrame($frame);
         $response = $this->getFrame();
 
+        //
+        // log the response
+        //
         $this->log[count($this->log)-1][1] = $response;
 
+        //
+        // check the response from the server
+        //
         $result = $response->getElementsByTagName('result')->item(0);
         if (!($result instanceof \DOMElement)) {
             throw new error('error parsing response from server: no <result> element found');
@@ -179,9 +191,15 @@ class epp {
                 throw new error("error parsing response from server: missing or empty 'code' attribute for <result> element");
 
             } elseif ($code < 2000) {
+                //
+                // result code indicates success so return the frame
+                //
                 return $response;
 
             } else {
+                //
+                // command failed, so throw an error
+                //
                 $msg = $response->getElementsByTagName('msg')->item(0);
                 if ($msg instanceof \DOMElement) {
                     $msg = $msg->textContent;
