@@ -223,7 +223,8 @@ final class plugin {
         }
 
         $epp->request($frame);
-        return ['success' => true];
+
+        return self::success();
     }
 
     /**
@@ -257,7 +258,8 @@ final class plugin {
         }
 
         $epp->request($frame);
-        return ['success' => true];
+
+        return self::success();
     }
 
     /**
@@ -293,7 +295,8 @@ final class plugin {
         }
 
         $epp->request($frame);
-        return ['success' => true];
+
+        return self::success();
     }
 
     /**
@@ -352,7 +355,8 @@ final class plugin {
         if ($rem_ns->childNodes->length < 1) $update->removeChild($rem);
 
         $epp->request($frame);
-        return ['success' => true];
+
+        return self::success();
     }
 
     /**
@@ -399,7 +403,7 @@ final class plugin {
             $epp->request($frame);
         }
 
-        return ['success' => true];
+        return self::success();
     }
 
     /**
@@ -578,7 +582,7 @@ final class plugin {
             }
         }
 
-        return ['success' => true];
+        return self::success();
     }
 
     /**
@@ -625,7 +629,8 @@ final class plugin {
             ->setAttribute('ip', 4 == strlen(inet_pton($params['ipaddress'])) ? 'v4' : 'v6');
 
         $epp->request($frame);
-        return ['success' => true];
+
+        return self::success();
     }
 
     /**
@@ -657,7 +662,8 @@ final class plugin {
         }
 
         $epp->request($frame);
-        return ['success' => true];
+
+        return self::success();
     }
 
     /**
@@ -674,8 +680,10 @@ final class plugin {
                             ->add($frame->nsCreate(epp::xmlns_host, epp::delete));
 
         $create->add($frame->create('name', $params['nameserver']));
+
         $epp->request($frame);
-        return ['success' => true];
+
+        return self::success();
     }
 
     /**
@@ -710,8 +718,10 @@ final class plugin {
                             ->add($frame->nsCreate(epp::xmlns_domain, epp::delete));
 
         $create->add($frame->create('name', $params['domain']));
+
         $epp->request($frame);
-        return ['success' => true];
+
+        return self::success();
     }
 
     /**
@@ -994,5 +1004,12 @@ final class plugin {
 
         $info->add($frame->create('id', $id));
         return self::connection()->request($frame);
+    }
+
+    /**
+     * standard sucessful response
+     */
+    private static function success() : array {
+        return ['success' => true];
     }
 }
