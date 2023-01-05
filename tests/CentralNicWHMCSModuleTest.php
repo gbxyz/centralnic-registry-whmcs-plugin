@@ -546,4 +546,19 @@ class CentralNicWHMCSModuleTest extends TestCase {
     public function test_RequestDelete() {
         $this->doStandardResultChecks(centralnic_RequestDelete(self::standardFunctionParams()));
     }
+
+    public function test_RequestDeleteForNonExistentDomain() {
+        $params = self::standardFunctionParams();
+
+        $params['domain'] = 'this-domain-should-not-exist-'.uniqid().'.'.$params['tld'];
+
+        $result = centralnic_RequestDelete($params);
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('success', $result);
+        $this->assertIsBool($result['success']);
+        $this->assertFalse($result['success']);
+
+        $this->assertTrue(true);
+    }
 }
