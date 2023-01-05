@@ -32,7 +32,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
      * this is a data provider allowing us to validate the existence of all the
      * module functions
      */
-    public static function functionNamesProvider() : array {
+    public static function functionNamesDataProvider() : array {
         return [
             ['MetaData'],
             ['getConfigArray'],
@@ -128,7 +128,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
      */
 
     /**
-     * @dataProvider functionNamesProvider
+     * @dataProvider functionNamesDataProvider
      */
     public function test_ModuleFunctionsExist($function) {
         $this->assertTrue(function_exists('centralnic_' . $function), 'module function exists');
@@ -142,7 +142,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
      *
      * @param $function
      *
-     * @dataProvider functionNamesProvider
+     * @dataProvider functionNamesDataProvider
      */
     public function test_ModuleFunctionMethods($function) {
         $this->assertTrue(method_exists('\centralnic\whmcs\plugin', $function), 'module method exists');
@@ -151,7 +151,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
     /**
      * Test the signatures of each method
      *
-     * @dataProvider functionNamesProvider
+     * @dataProvider functionNamesDataProvider
      */
     public function test_ModuleMethodSignatures($function) {
 
