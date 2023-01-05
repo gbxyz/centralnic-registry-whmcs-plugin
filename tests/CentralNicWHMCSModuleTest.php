@@ -59,18 +59,21 @@ class CentralNicWHMCSModuleTest extends TestCase {
     public static function availabilitySearchDataProvider() : array {
         return [
             [
+                # not registered, standard
                 'sld'       => 'this-domain-is-not-registered',
                 'tld'       => 'uk.com',
                 'avail'     => true,
                 'premium'   => false,
             ],
             [
+                # registered, standard
                 'sld'       => 'example',
                 'tld'       => 'uk.com',
                 'avail'     => false,
                 'premium'   => false,
             ],
             [
+                # not registered, premium
                 'sld'       => 'aa',
                 'tld'       => 'uk.com',
                 'avail'     => true,
@@ -79,6 +82,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
                 'renew'     => 16.25,
             ],
             [
+                # registered, premium
                 'sld'       => 'ab',
                 'tld'       => 'uk.com',
                 'avail'     => false,
@@ -87,7 +91,6 @@ class CentralNicWHMCSModuleTest extends TestCase {
                 'renew'     => 16.25,
             ],
         ];
-
     }
 
     /**
