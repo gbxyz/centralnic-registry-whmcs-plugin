@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  EPP_CLIENT_ID: ${{secrets.EPP_CLIENT_ID}}
+  EPP_CLIENT_PW: ${{secrets.EPP_CLIENT_PW}}
+  BILLING_CURRENCY: ${{env.BILLING_CURRENCY }}
+  PREMIUM_COST: ${{env.PREMIUM_COST }}
+  TEST_TLD: ${{env.TEST_TLD }}
+  COVERAGE_THRESHOLD: 75
+
+jobs:
+  Test:
+    runs-on: ubuntu-latest
+    container: gbxyz/ubuntu-latest-php-82-openswoole:main
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: install packages
+        run: apt-get install -qqq php-pcov
+
+      - name: run composer install
+        run: composer install --dev
+
+      - name: pest
+        run: vendor/bin/pest --no-progress --coverage --coverage-text
+
+      - name: coverage check
+        run: vendor/bin/coverage-check clover.xml $COVERAGE_THRESHOLD
