@@ -132,9 +132,13 @@ class CentralNicWHMCSModuleTest extends TestCase {
 
         $this->assertArrayHasKey('success', $result, "return array contains the 'success' key");
 
-        $this->assertIsBool($result['success'], 'success is a boolean');
+        $this->assertIsBool($result['success'], "'success' value is a boolean");
 
-        $this->assertTrue($result['success'], 'success is true');
+        if (true !== $result['success']) {
+            fwrite(STDERR, $result['error']."\n");
+        }
+
+        $this->assertTrue($result['success'], "'success' value is true");
     }
 
     /*
