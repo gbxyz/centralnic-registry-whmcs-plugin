@@ -73,7 +73,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
         return [
             [
                 # not registered, standard
-                'sld'       => 'this-domain-is-not-registered',
+                'sld'       => 'available-domain-'.uniqid(),
                 'tld'       => 'uk.com',
                 'avail'     => true,
                 'premium'   => false,
@@ -91,8 +91,8 @@ class CentralNicWHMCSModuleTest extends TestCase {
                 'tld'       => 'uk.com',
                 'avail'     => true,
                 'premium'   => true,
-                'register'  => 99,
-                'renew'     => 16.25,
+                'register'  => 125.73,
+                'renew'     => 20.64,
             ],
             [
                 # registered, premium
@@ -100,8 +100,8 @@ class CentralNicWHMCSModuleTest extends TestCase {
                 'tld'       => 'uk.com',
                 'avail'     => false,
                 'premium'   => true,
-                'register'  => 99,
-                'renew'     => 16.25,
+                'register'  => 125.73,
+                'renew'     => 20.64,
             ],
         ];
     }
@@ -542,14 +542,14 @@ class CentralNicWHMCSModuleTest extends TestCase {
         $this->assertEquals($result->results[0]->sld, $sld);
         $this->assertEquals($result->results[0]->tld, $tld);
 
-        $this->assertObjectHasAttribute('status', $result->results[0]);
+        $this->assertObjectHasProperty('status', $result->results[0]);
         $this->assertEquals($result->results[0]->status, $avail);
 
-        $this->assertObjectHasAttribute('premium', $result->results[0]);
+        $this->assertObjectHasProperty('premium', $result->results[0]);
         $this->assertEquals($result->results[0]->premium, $premium);
 
         if (true === $premium) {
-            $this->assertObjectHasAttribute('pricing', $result->results[0]);
+            $this->assertObjectHasProperty('pricing', $result->results[0]);
             $this->assertIsArray($result->results[0]->pricing);
 
             $this->assertArrayHasKey('register', $result->results[0]->pricing);
