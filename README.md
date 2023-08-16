@@ -1,9 +1,8 @@
 # CentralNic WHMCS Plugin
 
-This repository contains a greenfield plugin for WHMCS, that interacts with the CentralNic Registry EPP server. Unlike the "legacy"
-plugin, it does not use an external EPP library.
+This repository contains a plugin for WHMCS that interacts with the [CentralNic Registry](https://centralnicregistry.com) EPP server.
 
-It implements much more of the available plugin functions, and also has unit testing covering most of the codebase.
+This should not be confused with the [CentralNic Reseller](https://docs.whmcs.com/CentralNic_Reseller) plugin for WHMCS.
 
 ## Copyright
 
