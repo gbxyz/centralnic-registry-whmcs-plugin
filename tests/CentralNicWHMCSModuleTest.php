@@ -15,13 +15,26 @@ class CentralNicWHMCSModuleTest extends TestCase {
 
     protected static string $sld;
 
+    private static function getenv(string $name): string {
+        $value = getenv($name);
+
+        if (false === $value || strlen($name) < 1) {
+            throw new Exception("Missing or empty '{$name}' environment variable");
+        }
+
+        return $value;
+    }
+
     public static function setUpBeforeClass() : void {
         global $argv;
 
-        $file = __DIR__.'/config.ini';
-        if (file_exists($file)) {
-            self::$params = parse_ini_file($file, false);
-        }
+        self::$params = [
+            'ResellerHandle'        => self::getenv('EPP_CLIENT_ID'),
+            'ResellerAPIPassword'   => self::getenv('EPP_CLIENT_PW'),
+            'BillingCurrency'       => self::getenv('BILLING_CURRENCY'),
+            'TestTLD'               => self::getenv('TEST_TLD'),
+            'PremiumCost'           => self::getenv('PREMIUM_COST'),
+        ];
 
         self::$sld = substr(strtolower(__CLASS__.'-test-'.uniqid()), 0, 63);
 
