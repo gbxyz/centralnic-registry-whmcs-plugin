@@ -35,8 +35,6 @@ class epp {
     private $greeting;
     private $socket;
 
-    private array $log = [];
-
     public bool $debug = false;
 
     public function __construct(string $host, string $id, string $pw) {
@@ -56,6 +54,7 @@ class epp {
             self::timeout,
             STREAM_CLIENT_CONNECT,
         );
+
         if (!is_resource($this->socket)) {
             throw new error(sprintf(
                 'Error connecting to %s:%d: %s (%u)',
@@ -64,11 +63,9 @@ class epp {
                 $error_mesg,
                 $error_code,
             ));
-
-        } else {
-            $this->greeting = $this->getFrame();
-
         }
+
+        $this->greeting = $this->getFrame();
     }
 
     /**
@@ -104,35 +101,35 @@ class epp {
      */
     private function getFrame() : xml\frame {
         $hdr = fread($this->socket, 4);
-        if (false === $hdr || strlen($hdr) != 4) {
+        if (false === $hdr || strlen($hdr) !== 4) {
             throw new error('error reading frame header');
+        }
 
-        } else {
-            list(,$len) = unpack('N', $hdr);
+        list(,$len) = unpack('N', $hdr);
 
-            $was = libxml_use_internal_errors(false);
+        $xml = fread($this->socket, $len-4);
+        if (false === $xml) {
+            throw new error('error reading frame payload from socket');
+        }
 
-            $frame = new xml\frame;
-            $ok = $frame->loadXML(fread($this->socket, $len-4));
+        $frame = new xml\frame;
+        $ok = $frame->loadXML($xml);
 
-            libxml_use_internal_errors($was);
-
-            if (false === $ok) {
-                foreach (libxml_get_errors() as $e) {
-                    if (in_array($e->level, [LIBXML_ERR_ERROR, LIBXML_ERR_FATAL])) {
-                        throw new error(sprintf(
-                            'error parsing XML from server: %s on line %u column %u',
-                            $e->message,
-                            $e->line,
-                            $e->column,
-                        ));
-                    }
+        if (false === $ok) {
+            foreach (libxml_get_errors() as $e) {
+                if (LIBXML_ERR_WARNING !== $e->level) {
+                    throw new error(sprintf(
+                        'error parsing XML from server: %s on line %u column %u',
+                        $e->message,
+                        $e->line,
+                        $e->column,
+                    ));
                 }
-            } else {
-                if ($this->debug) fwrite(STDERR, $frame->saveXML());
-                return $frame;
             }
         }
+
+        if ($this->debug) fwrite(STDERR, $frame->saveXML());
+        return $frame;
     }
 
     /**
@@ -148,10 +145,14 @@ class epp {
 
         if ($this->debug) fwrite(STDERR, $xml);
 
-        fwrite(
+        $result = fwrite(
             $this->socket,
             pack('N', 4+strlen($xml)).$xml,
         );
+
+        if (false === $result) {
+            throw new error('error writing XML to socket');
+        }
     }
 
     /**
@@ -166,56 +167,45 @@ class epp {
      * @throws error
      */
     public function request(xml\frame $frame) : xml\frame {
-
-        //
-        // log the command
-        //
-        $this->log[] = [$frame, null];
-
         //
         // send the frame to the server and get the response
         //
         $this->sendFrame($frame);
-        $response = $this->getFrame();
 
-        //
-        // log the response
-        //
-        $this->log[count($this->log)-1][1] = $response;
+        $response = $this->getFrame();
 
         //
         // check the response from the server
         //
-        $result = $response->getElementsByTagName('result')->item(0);
+        $result = $response->getElementsByTagNameNS(self::xmlns, 'result')->item(0);
         if (!($result instanceof \DOMElement)) {
             throw new error('error parsing response from server: no <result> element found');
+        }
+
+        $code = intval($result->getAttribute('code') ?: 2400);
+        if (0 == $code) {
+            throw new error("error parsing response from server: missing or empty 'code' attribute for <result> element");
+        }
+
+        if ($code < 2000) {
+            //
+            // result code indicates success so return the frame
+            //
+            return $response;
+        }
+
+        //
+        // command failed, so throw an error
+        //
+        $msg = $response->getElementsByTagName('msg')->item(0);
+        if ($msg instanceof \DOMElement) {
+            $msg = $msg->textContent;
 
         } else {
-            $code = intval($result->getAttribute('code'));
-            if (0 == $code) {
-                throw new error("error parsing response from server: missing or empty 'code' attribute for <result> element");
+            $msg = 'unknown error';
 
-            } elseif ($code < 2000) {
-                //
-                // result code indicates success so return the frame
-                //
-                return $response;
-
-            } else {
-                //
-                // command failed, so throw an error
-                //
-                $msg = $response->getElementsByTagName('msg')->item(0);
-                if ($msg instanceof \DOMElement) {
-                    $msg = $msg->textContent;
-
-                } else {
-                    $msg = 'unknown error';
-
-                }
-
-                throw new error(sprintf('%04u error: %s', $code, $msg));
-            }
         }
+
+        throw new error(sprintf('%04u error: %s', $code, $msg));
     }
 }
