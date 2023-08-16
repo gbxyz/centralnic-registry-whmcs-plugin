@@ -46,8 +46,9 @@ class epp {
 
     /**
      * connect to the server
+     * @throws error
      */
-    private function connect(string $host) {
+    private function connect(string $host) : void {
         $this->socket = stream_socket_client(
             'tls://'.$host.':'.self::port,
             $error_code,
@@ -72,8 +73,9 @@ class epp {
 
     /**
      * send a <login> command
+     * @throws error
      */
-    private function login(string $id, string $pw) {
+    private function login(string $id, string $pw) : xml\frame {
         $frame = new xml\frame;
 
         $login = $frame->appendChild($frame->createElementNS(self::xmlns, 'epp'))
@@ -98,6 +100,7 @@ class epp {
 
     /**
      * get a frame from the server
+     * @throws error
      */
     private function getFrame() : xml\frame {
         $hdr = fread($this->socket, 4);
@@ -134,8 +137,9 @@ class epp {
 
     /**
      * send a frame to the server
+     * @throws error
      */
-    private function sendFrame(xml\frame $frame) {
+    private function sendFrame(xml\frame $frame) : void {
         if (1 == $frame->getElementsByTagName('command')->length && 0 == $frame->getElementsByTagName('clTRID')->length) {
             $frame->getElementsByTagName('command')->item(0)->appendChild($frame->createElement('clTRID', self::generateclTRID()));
         }
@@ -159,6 +163,7 @@ class epp {
 
     /**
      * send a frame to the server and get the response
+     * @throws error
      */
     public function request(xml\frame $frame) : xml\frame {
 
