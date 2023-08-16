@@ -8,9 +8,6 @@ on:
 env:
   EPP_CLIENT_ID: ${{secrets.EPP_CLIENT_ID}}
   EPP_CLIENT_PW: ${{secrets.EPP_CLIENT_PW}}
-  BILLING_CURRENCY: ${{env.BILLING_CURRENCY }}
-  PREMIUM_COST: ${{env.PREMIUM_COST }}
-  TEST_TLD: ${{env.TEST_TLD }}
   COVERAGE_THRESHOLD: 75
 
 jobs:
