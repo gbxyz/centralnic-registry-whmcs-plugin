@@ -21,6 +21,13 @@
         "email": "support@centralnic.com"
     },
     "require-dev": {
-        "phpunit/phpunit": "@stable"
+        "phpunit/phpunit": "@stable",
+        "pestphp/pest": "^2.14",
+        "rregeer/phpunit-coverage-check": "^0.3.1"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
     }
 }
