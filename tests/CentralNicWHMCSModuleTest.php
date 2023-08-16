@@ -38,7 +38,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
 
         self::$sld = substr(strtolower(__CLASS__.'-test-'.uniqid()), 0, 63);
 
-        \centralnic\whmcs\plugin::$debug = in_array('--verbose', $argv);
+        \centralnic\whmcs\plugin::$debug = true;
     }
 
     /**
