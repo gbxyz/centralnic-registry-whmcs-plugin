@@ -8,6 +8,9 @@ on:
 env:
   EPP_CLIENT_ID: ${{secrets.EPP_CLIENT_ID}}
   EPP_CLIENT_PW: ${{secrets.EPP_CLIENT_PW}}
+  BILLING_CURRENCY: USD
+  PREMIUM_COST: 41.41
+  TEST_TLD: smoketestcnic
   COVERAGE_THRESHOLD: 75
 
 jobs:
