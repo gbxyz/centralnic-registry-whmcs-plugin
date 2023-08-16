@@ -3,15 +3,17 @@ name: CI
 on:
   push:
     branches: [ "main" ]
+  schedule:
+    - cron: '55 5 * * *'
   workflow_dispatch:
 
 env:
   EPP_CLIENT_ID: ${{secrets.EPP_CLIENT_ID}}
   EPP_CLIENT_PW: ${{secrets.EPP_CLIENT_PW}}
   BILLING_CURRENCY: USD
-  PREMIUM_COST: 41.41
+  PREMIUM_COST: 35.00
   TEST_TLD: smoketestcnic
-  COVERAGE_THRESHOLD: 75
+  COVERAGE_THRESHOLD: 85
 
 jobs:
   Test:
