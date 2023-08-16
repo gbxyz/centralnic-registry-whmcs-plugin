@@ -80,11 +80,6 @@ final class plugin {
     //
     public static bool $debug = false;
 
-    //
-    // EPP connection object
-    //
-    private static epp $epp;
-
     /**
      * this maps low-level contact types to human-readable descriptions used
      * in GetContactDetails() and SaveContactDetails()
@@ -146,7 +141,7 @@ final class plugin {
      * will create new contacts as needed then the domain
      */
     public static function RegisterDomain(array $params) : array {
-        $epp = self::connection($params);
+        $epp = self::getConnection($params);
 
         //
         // create contact objects
@@ -241,7 +236,7 @@ final class plugin {
      * Called when a domain transfer request is initiated within WHMCS.
      */
     public static function TransferDomain(array $params) : array {
-        $epp = self::connection($params);
+        $epp = self::getConnection($params);
 
         $frame = new xml\frame;
 
@@ -276,7 +271,7 @@ final class plugin {
      * Called when a request to renew a domain is initiated within WHMCS.
      */
     public static function RenewDomain(array $params) : array {
-        $epp = self::connection($params);
+        $epp = self::getConnection($params);
 
         //
         // get the domain's current expiry date
@@ -314,7 +309,7 @@ final class plugin {
      * nameservers that are set for the domain.
      */
     public static function GetNameservers(array $params) : array {
-        $epp = self::connection($params);
+        $epp = self::getConnection($params);
 
         $info = self::info($params['domain']);
 
@@ -329,7 +324,7 @@ final class plugin {
      * Called when a change is submitted for a domains nameservers.
      */
     public static function SaveNameservers(array $params) : array {
-        $epp = self::connection($params);
+        $epp = self::getConnection($params);
 
         $info = self::info($params['domain']);
 
@@ -374,7 +369,7 @@ final class plugin {
      * the current lock status of a domain.
      */
     public static function GetRegistrarLock(array $params) : string {
-        $epp = self::connection($params);
+        $epp = self::getConnection($params);
 
         $info = self::info($params['domain']);
 
@@ -391,7 +386,7 @@ final class plugin {
      * Called when the lock status setting is toggled within WHMCS.
      */
     public static function SaveRegistrarLock(array $params) : array {
-        $epp = self::connection($params);
+        $epp = self::getConnection($params);
 
         $locked = ('locked' == self::GetRegistrarLock($params));
         $lock_wanted = isset($params['lockenabled']) && 'locked' == $params['lockenabled'];
@@ -420,7 +415,7 @@ final class plugin {
      * Called when the WHOIS information is displayed within WHMCS.
      */
     public static function GetContactDetails(array $params) : array {
-        $epp = self::connection($params);
+        $epp = self::getConnection($params);
 
         $info = self::info($params['domain']);
 
@@ -469,7 +464,7 @@ final class plugin {
      * Called when revised WHOIS information is submitted.
      */
     public static function SaveContactDetails(array $params) : array {
-        $epp = self::connection($params);
+        $epp = self::getConnection($params);
 
         //
         // create new contact objects
@@ -598,7 +593,7 @@ final class plugin {
      * Called when the EPP Code is requested for a transfer out.
      */
     public static function GetEPPCode(array $params) : array {
-        $epp = self::connection($params);
+        $epp = self::getConnection($params);
 
         $frame = new xml\frame;
 
@@ -625,7 +620,7 @@ final class plugin {
      */
     public static function RegisterNameserver(array $params) : array {
 
-        $epp = self::connection($params);
+        $epp = self::getConnection($params);
 
         $frame = new xml\frame;
 
@@ -648,7 +643,7 @@ final class plugin {
      */
     public static function ModifyNameserver(array $params) : array {
 
-        $epp = self::connection($params);
+        $epp = self::getConnection($params);
 
         $frame = new xml\frame;
 
@@ -680,7 +675,7 @@ final class plugin {
      * Called when a child nameserver deletion request comes from WHMCS.
      */
     public static function DeleteNameserver(array $params) : array {
-        $epp = self::connection($params);
+        $epp = self::getConnection($params);
 
         $frame = new xml\frame;
 
@@ -702,7 +697,7 @@ final class plugin {
      */
     public static function Sync(array $params) : array {
 
-        $epp = self::connection($params);
+        $epp = self::getConnection($params);
 
         $info = self::info($params['domain']);
 
@@ -718,7 +713,7 @@ final class plugin {
      * Called when a domain deletion request comes from WHMCS.
      */
     public static function RequestDelete(array $params) : array {
-        $epp = self::connection($params);
+        $epp = self::getConnection($params);
 
         $frame = new xml\frame;
 
@@ -740,7 +735,7 @@ final class plugin {
      * feature).
      */
     public static function TransferSync(array $params) : array {
-        $epp = self::connection($params);
+        $epp = self::getConnection($params);
 
         $frame = new xml\frame;
 
@@ -779,7 +774,7 @@ final class plugin {
     }
 
     public static function CheckAvailability(array $params) : \WHMCS\Domains\DomainLookup\ResultsList {
-        $epp = self::connection($params);
+        $epp = self::getConnection($params);
 
         $frame = new xml\frame;
         
@@ -869,16 +864,24 @@ final class plugin {
      * get the connection to the EPP server
      * if no $params is provided, the existing connection will be returned
      */
-    public static function connection(array $params=NULL) : epp {
-        if (!isset(self::$epp)) self::$epp = new epp(
-            1 == $params['testMode'] ? self::test_host : self::prod_host,
-            $params['ResellerHandle'],
-            $params['ResellerAPIPassword']
-        );
+    public static function getConnection(?array $params=NULL) : epp {
+        static $epp = null;
 
-        self::$epp->debug = &self::$debug;
+        if (is_null($epp)) {
+            if (!is_array($params)) {
+                throw new error("invalid argument passed to ".__METHOD__."(), array expected");
+            }
 
-        return self::$epp;
+            $epp = new epp(
+                1 == $params['testMode'] ? self::test_host : self::prod_host,
+                $params['ResellerHandle'],
+                $params['ResellerAPIPassword']
+            );
+
+            $epp->debug = &self::$debug;
+        }
+
+        return $epp;
     }
 
     /**
@@ -977,7 +980,7 @@ final class plugin {
         $create->add($frame->create('authInfo'))
             ->add($frame->create('pw', self::generateAuthInfo()));
 
-        self::connection()->request($frame);
+        self::getConnection()->request($frame);
 
         return $id;
     }
@@ -1000,7 +1003,7 @@ final class plugin {
                             ->add($frame->nsCreate(epp::xmlns_domain, 'info'));
 
         $info->add($frame->create('name', $domain));
-        return self::connection()->request($frame);
+        return self::getConnection()->request($frame);
     }
 
     /**
@@ -1014,7 +1017,7 @@ final class plugin {
                             ->add($frame->nsCreate(epp::xmlns_contact, 'info'));
 
         $info->add($frame->create('id', $id));
-        return self::connection()->request($frame);
+        return self::getConnection()->request($frame);
     }
 
     /**
