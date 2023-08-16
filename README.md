@@ -1,8 +1,16 @@
-# CentralNic WHMCS Plugin
+# CentralNic Registry WHMCS Plugin
+
+[![CI](https://github.com/gbxyz/centralnic-registry-whmcs-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/gbxyz/centralnic-registry-whmcs-plugin/actions/workflows/ci.yml)
 
 This repository contains a plugin for WHMCS that interacts with the [CentralNic Registry](https://centralnicregistry.com) EPP server.
+It should also work with the [SK-NIC](https://sk-nic.sk) and [LANIC](https://www.lanic.gov.la) systems, which run the same software, although you will need to change the EPP server hostname.
+It should also work with any standards-compliant EPP server, although this is not guaranteed.
 
-This should not be confused with the [CentralNic Reseller](https://docs.whmcs.com/CentralNic_Reseller) plugin for WHMCS.
+This plugin should not be confused with the [CentralNic Reseller](https://docs.whmcs.com/CentralNic_Reseller) plugin for WHMCS.
+
+## Support
+
+Please use the [GitHub issues system](https://github.com/gbxyz/centralnic-registry-whmcs-plugin/issues) to report any issues with this plugin.
 
 ## Copyright
 
