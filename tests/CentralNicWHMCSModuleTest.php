@@ -1,11 +1,9 @@
-<?php
+<?php declare(strict_types=1);
 
 /**
  * CentralNic Registry WHMCS Module
  * Copyright 2023 CentralNic Group PLC. All rights reserved.
  */
-
-declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
 
@@ -91,8 +89,8 @@ class CentralNicWHMCSModuleTest extends TestCase {
                 'tld'       => 'uk.com',
                 'avail'     => true,
                 'premium'   => true,
-                'register'  => 125.73,
-                'renew'     => 20.64,
+                'register'  => 99.00,
+                'renew'     => 16.25,
             ],
             [
                 # registered, premium
@@ -100,8 +98,8 @@ class CentralNicWHMCSModuleTest extends TestCase {
                 'tld'       => 'uk.com',
                 'avail'     => false,
                 'premium'   => true,
-                'register'  => 125.73,
-                'renew'     => 20.64,
+                'register'  => 99.00,
+                'renew'     => 16.25,
             ],
         ];
     }
@@ -365,7 +363,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
         $this->assertIsArray($ns);
 
         for ($i = 1 ; $i <= count($ns) ; $i++) {
-            $this->assertEquals($ns[sprintf('ns%u', $i)], sprintf('ns%u.centralnic.net', $i));
+            $this->assertEquals(sprintf('ns%u.centralnic.net', $i), $ns[sprintf('ns%u', $i)]);
         }
     }
 
@@ -401,7 +399,7 @@ class CentralNicWHMCSModuleTest extends TestCase {
         $lock = centralnic_GetRegistrarLock(self::standardFunctionParams());
 
         $this->assertIsString($lock);
-        $this->assertEquals($lock, 'unlocked');
+        $this->assertEquals('unlocked', $lock);
     }
 
     public function test_AddRegistrarLock() {
@@ -539,24 +537,24 @@ class CentralNicWHMCSModuleTest extends TestCase {
         $this->assertInstanceOf('WHMCS\Domains\DomainLookup\ResultsList', $result);
         $this->assertInstanceOf('WHMCS\Domains\DomainLookup\SearchResult', $result->results[0]);
 
-        $this->assertEquals($result->results[0]->sld, $sld);
-        $this->assertEquals($result->results[0]->tld, $tld);
+        $this->assertEquals($sld, $result->results[0]->sld);
+        $this->assertEquals($tld, $result->results[0]->tld);
 
         $this->assertObjectHasProperty('status', $result->results[0]);
-        $this->assertEquals($result->results[0]->status, $avail);
+        $this->assertEquals($avail, $result->results[0]->status);
 
         $this->assertObjectHasProperty('premium', $result->results[0]);
-        $this->assertEquals($result->results[0]->premium, $premium);
+        $this->assertEquals($premium, $result->results[0]->premium);
 
         if (true === $premium) {
             $this->assertObjectHasProperty('pricing', $result->results[0]);
             $this->assertIsArray($result->results[0]->pricing);
 
             $this->assertArrayHasKey('register', $result->results[0]->pricing);
-            $this->assertEquals($result->results[0]->pricing['register'], $registerPrice);
+            $this->assertEquals($registerPrice, $result->results[0]->pricing['register']);
 
             $this->assertArrayHasKey('renew', $result->results[0]->pricing);
-            $this->assertEquals($result->results[0]->pricing['renew'], $renewPrice);
+            $this->assertEquals($renewPrice, $result->results[0]->pricing['renew']);
         }
     }
 

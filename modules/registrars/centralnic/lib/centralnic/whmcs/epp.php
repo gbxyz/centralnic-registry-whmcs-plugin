@@ -1,11 +1,9 @@
-<?php
+<?php declare(strict_types=1);
 
 /**
  * CentralNic Registry WHMCS Module
  * Copyright 2023 CentralNic Group PLC. All rights reserved.
  */
-
-declare(strict_types=1);
 
 namespace centralnic\whmcs;
 
@@ -35,11 +33,9 @@ class epp {
     private $greeting;
     private $socket;
 
-    public bool $debug = false;
-
-    public function __construct(string $host, string $id, string $pw) {
+    public function __construct(public readonly string $host, public readonly string $clid, string $pw, public bool $debug=false) {
         $this->connect($host);
-        $this->login($id, $pw);
+        $this->login($clid, $pw);
     }
 
     /**
@@ -99,7 +95,7 @@ class epp {
      * get a frame from the server
      * @throws error
      */
-    private function getFrame() : xml\frame {
+    public function getFrame() : xml\frame {
         $hdr = fread($this->socket, 4);
         if (false === $hdr || strlen($hdr) !== 4) {
             throw new error('error reading frame header');
@@ -136,7 +132,7 @@ class epp {
      * send a frame to the server
      * @throws error
      */
-    private function sendFrame(xml\frame $frame) : void {
+    public function sendFrame(xml\frame $frame) : void {
         if (1 == $frame->getElementsByTagName('command')->length && 0 == $frame->getElementsByTagName('clTRID')->length) {
             $frame->getElementsByTagName('command')->item(0)->appendChild($frame->createElement('clTRID', self::generateclTRID()));
         }
@@ -207,5 +203,20 @@ class epp {
         }
 
         throw new error(sprintf('%04u error: %s', $code, $msg));
+    }
+
+    /**
+     * @throws error
+     */
+    public function logout() : void {
+        $frame = new xml\frame;
+
+        $frame->appendChild($frame->createElementNS(self::xmlns, 'epp'))
+            ->appendChild($frame->createElement('command'))
+                ->appendChild($frame->createElement('logout'));
+
+        $this->request($frame);
+
+        fclose($this->socket);
     }
 }
