@@ -33,7 +33,12 @@ class epp {
     private $greeting;
     private $socket;
 
-    public function __construct(public readonly string $host, public readonly string $clid, string $pw, public bool $debug=false) {
+    public function __construct(
+        public readonly string $host,
+        public readonly string $clid,
+        string $pw,
+        public bool $debug=false
+    ) {
         $this->connect($host);
         $this->login($clid, $pw);
     }
