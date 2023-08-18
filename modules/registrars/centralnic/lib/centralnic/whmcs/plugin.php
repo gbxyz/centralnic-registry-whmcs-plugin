@@ -7,10 +7,6 @@
 
 namespace centralnic\whmcs;
 
-require __DIR__.'/error.php';
-require __DIR__.'/epp.php';
-require __DIR__.'/frame.php';
-
 /**
  * this "magic" function avoids lots of boilerplate in the plugin file by
  * dynamically calling the appropriate static method with the provided arguments

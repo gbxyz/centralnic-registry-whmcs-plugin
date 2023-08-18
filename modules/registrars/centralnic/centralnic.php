@@ -10,6 +10,9 @@ declare(strict_types=1);
 if (!defined('WHMCS')) die('This file cannot be accessed directly');
 
 require __DIR__.'/lib/centralnic/whmcs/plugin.php';
+require __DIR__.'/lib/centralnic/whmcs/error.php';
+require __DIR__.'/lib/centralnic/whmcs/epp.php';
+require __DIR__.'/lib/centralnic/whmcs/frame.php';
 
 use function \centralnic\whmcs\magic as _;
 
