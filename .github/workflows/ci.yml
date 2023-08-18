@@ -8,11 +8,10 @@ on:
   workflow_dispatch:
 
 env:
-  EPP_CLIENT_ID: ${{secrets.EPP_CLIENT_ID}}
-  EPP_CLIENT_PW: ${{secrets.EPP_CLIENT_PW}}
-  BILLING_CURRENCY: GBP
-  PREMIUM_COST: 27.50
-  TEST_TLD: smoketestcnic
+  EPP_CLIENT1_ID: ${{secrets.EPP_CLIENT1_ID}}
+  EPP_CLIENT1_PW: ${{secrets.EPP_CLIENT1_PW}}
+  EPP_CLIENT2_ID: ${{secrets.EPP_CLIENT2_ID}}
+  EPP_CLIENT2_PW: ${{secrets.EPP_CLIENT2_PW}}
   COVERAGE_THRESHOLD: 85
 
 jobs:
