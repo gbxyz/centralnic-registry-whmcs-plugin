@@ -6,7 +6,8 @@
  */
 
 use PHPUnit\Framework\TestCase;
-use centralnic\whmcs\plugin;
+use centralnic\whmcs\{plugin,epp};
+use centralnic\whmcs\xml\frame;
 
 class pluginTest extends TestCase {
 
@@ -120,20 +121,13 @@ class pluginTest extends TestCase {
     }
 
     /**
-     * return values from plugin functions had a standard structure,
+     * return values from plugin functions have a standard structure,
      * which this method tests
      */
     private function doStandardResultChecks($result) {
         $this->assertIsArray($result);
-
         $this->assertArrayHasKey('success', $result);
-
         $this->assertIsBool($result['success']);
-
-        if (true !== $result['success']) {
-            fwrite(STDERR, $result['error']."\n");
-        }
-
         $this->assertTrue($result['success']);
     }
  
@@ -546,10 +540,17 @@ class pluginTest extends TestCase {
     public function testTransferDomain() {
         $params = self::standardFunctionParams();
 
+        //
+        // force the current connection to be shut down
+        //
         plugin::forceDisconnect();
 
+        //
+        // use the second set of credentials to transfer the domain
+        //
         $params['ResellerHandle']       = self::getenv('EPP_CLIENT2_ID');
         $params['ResellerAPIPassword']  = self::getenv('EPP_CLIENT2_PW');
+
         $params['domain']               = self::$domain;
         $params['eppcode']              = self::$authInfo;
         $params['regperiod']            = 1;
@@ -562,11 +563,76 @@ class pluginTest extends TestCase {
         $this->doStandardResultChecks($result);
     }
 
+    private static function waitForNewMessage(array $params) : void {
+        $frame = new frame;
+        $poll = $frame->add($frame->nsCreate(epp::xmlns, epp::epp))
+                    ->add($frame->create(epp::command))
+                        ->add($frame->create('poll'));
+
+        $poll->setAttribute('op', 'req');
+
+        $count = null;
+        $t0 = hrtime(true);
+        while (true) {
+            $dt = (hrtime(true) - $t0) / 1_000_000_000;
+
+            if ($dt >= 120) break;
+
+            $response = plugin::getConnection($params)->request($frame);
+            $msgQ = $response->getElementsByTagNameNS(epp::xmlns, 'msgQ')->item(0);
+
+            if ($msgQ instanceof DOMElement) {
+                $newCount = (int)$msgQ->getAttribute('count');
+                if (is_null($count)) {
+                    $count = $newCount;
+
+                } elseif ($newCount > $count) {
+                    break;
+
+                }
+            }
+
+            sleep(1);
+        }
+
+        return;
+    }
+
     public function testTransferSync() {
         $params = self::standardFunctionParams();
         $params['domain'] = self::$domain;
 
-        $this->doStandardResultChecks(centralnic_TransferSync($params));
+        self::waitForNewMessage($params);
+        
+        $result = centralnic_TransferSync($params);
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('completed', $result);
+        $this->assertIsBool($result['completed']);
+        $this->assertFalse($result['completed']);
+
+        //
+        // reject the transfer so we can delete the domain
+        //
+        $frame = new frame;
+        $transfer = $frame->add($frame->nsCreate(epp::xmlns, epp::epp))
+                    ->add($frame->create(epp::command))
+                        ->add($frame->create(epp:: transfer))
+                            ->add($frame->nsCreate(epp::xmlns_domain, epp::transfer));
+
+        $transfer->parentNode->setAttribute('op', 'reject');
+
+        $transfer->add($frame->create('name', $params['domain']));
+
+        plugin::getConnection()->request($frame);
+
+        plugin::forceDisconnect();
+
+        $params['ResellerHandle']       = self::getenv('EPP_CLIENT2_ID');
+        $params['ResellerAPIPassword']  = self::getenv('EPP_CLIENT2_PW');
+
+        self::waitForNewMessage($params);
+
+        plugin::forceDisconnect();
     }
 
     /**

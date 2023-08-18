@@ -750,27 +750,38 @@ final class plugin {
 
         $response = $epp->request($frame);
 
+        $result = [];
+
         $trStatus = $response->first('trStatus')->textContent;
         switch ($trStatus) {
             case 'serverApproved':
             case 'clientApproved':
-                return [
-                    'completed'     => true,
-                    'expirydate'    => gmdate('Y-m-d', strtotime($response->first('exDate')->textContent)),
-                ];
+                $result['completed']    = true;
+                $result['failed']       = false;
+                $result['expirydate']   = gmdate('Y-m-d', strtotime($response->first('exDate')->textContent));
+                break;
 
             case 'clientRejected':
             case 'clientCancelled':
             case 'serverCancelled':
-                return [
-                    'failed'    => true,
-                    'reason'    => $trStatus,
-                ];
+                $result['completed']    = true;
+                $result['failed']       = true;
+
+                $result['reason'] = match($trStatus) {
+                    'clientRejected'    => 'transfer rejected by the losing registrar',
+                    'clientCancelled'   => 'transfer cancelled by the gaining registrar',
+                    'serverCancelled'   => 'transfer cancelled by the server',
+                };
+
+                break;
 
             case 'pending':
             default:
-                return [];
+                $result['completed'] = false;
+
         }
+
+        return $result;
     }
 
     public static function CheckAvailability(array $params) : \WHMCS\Domains\DomainLookup\ResultsList {
