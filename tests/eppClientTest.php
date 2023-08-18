@@ -21,7 +21,7 @@ class eppClientTest extends TestCase {
 
     public function testFailedConnection(): void {
         $this->expectException(ErrorException::class);
-        $epp = new epp('epp.invalid', 'foo', 'bar', true);
+        $epp = new epp('127.0.0.1', 'foo', 'bar', true);
     }
 
     public function testDroppedConnection(): void {
