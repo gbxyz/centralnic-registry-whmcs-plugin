@@ -67,6 +67,8 @@ function magic() {
  */
 final class plugin {
 
+    private static ?epp $epp = null;
+
     const registry_domain   = 'centralnic.com';
 	const prod_host         = 'epp.'.self::registry_domain;
 	const test_host         = 'epp-ote.'.self::registry_domain;
@@ -863,14 +865,12 @@ final class plugin {
      * if no $params is provided, the existing connection will be returned
      */
     public static function getConnection(?array $params=NULL) : epp {
-        static $epp = null;
-
-        if (is_null($epp)) {
+        if (is_null(self::$epp)) {
             if (!is_array($params)) {
                 throw new error("invalid argument passed to ".__METHOD__."(), array expected");
             }
 
-            $epp = new epp(
+            self::$epp = new epp(
                 host:   1 == $params['testMode'] ? self::test_host : self::prod_host,
                 clid:   $params['ResellerHandle'],
                 pw:     $params['ResellerAPIPassword'],
@@ -878,7 +878,14 @@ final class plugin {
             );
         }
 
-        return $epp;
+        return self::$epp;
+    }
+
+    public static function forceDisconnect() : void {
+        if (!is_null(self::$epp)) {
+            self::$epp->logout();
+            self::$epp = null;
+        }
     }
 
     /**
