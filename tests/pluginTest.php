@@ -635,6 +635,30 @@ class pluginTest extends TestCase {
         plugin::forceDisconnect();
     }
 
+
+    public function testRequestDelete() {
+        $params = self::standardFunctionParams();
+
+        $params['domain'] = self::$domain;
+
+        $this->doStandardResultChecks(centralnic_RequestDelete($params));
+    }
+
+    public function testRequestDeleteForNonExistentDomain() {
+        $params = self::standardFunctionParams();
+
+        $params['domain'] = 'this-domain-should-not-exist-'.uniqid().'.'.$params['tld'];
+
+        $result = centralnic_RequestDelete($params);
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('success', $result);
+        $this->assertIsBool($result['success']);
+        $this->assertFalse($result['success']);
+
+        $this->assertTrue(true);
+    }
+
     /**
      * @dataProvider availabilitySearchDataProvider
      */
@@ -680,28 +704,5 @@ class pluginTest extends TestCase {
             $this->assertArrayHasKey('renew', $result->results[0]->pricing);
             $this->assertEquals($renewPrice, $result->results[0]->pricing['renew']);
         }
-    }
-
-    public function testRequestDelete() {
-        $params = self::standardFunctionParams();
-
-        $params['domain'] = self::$domain;
-
-        $this->doStandardResultChecks(centralnic_RequestDelete($params));
-    }
-
-    public function testRequestDeleteForNonExistentDomain() {
-        $params = self::standardFunctionParams();
-
-        $params['domain'] = 'this-domain-should-not-exist-'.uniqid().'.'.$params['tld'];
-
-        $result = centralnic_RequestDelete($params);
-
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('success', $result);
-        $this->assertIsBool($result['success']);
-        $this->assertFalse($result['success']);
-
-        $this->assertTrue(true);
     }
 }
