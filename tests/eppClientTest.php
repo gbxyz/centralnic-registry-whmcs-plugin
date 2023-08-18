@@ -8,20 +8,23 @@
 use PHPUnit\Framework\TestCase;
 use centralnic\whmcs\{plugin,epp,error};
 
-set_error_handler(function ($severity, $message, $file, $line) {
-    if (!(error_reporting() & $severity)) {
-        // This error code is not included in error_reporting
-        return;
-    }
-
-    throw new ErrorException($message, 0, $severity, $file, $line);
-});
-
 class eppClientTest extends TestCase {
 
     public function testFailedConnection(): void {
         $this->expectException(ErrorException::class);
+
+        set_error_handler(function ($severity, $message, $file, $line) {
+            if (!(error_reporting() & $severity)) {
+                // This error code is not included in error_reporting
+                return;
+            }
+
+            throw new ErrorException($message, 0, $severity, $file, $line);
+        });
+
         $epp = new epp('127.0.0.1', 'foo', 'bar', true);
+
+        set_error_handler(null);
     }
 
     public function testDroppedConnection(): void {
@@ -43,5 +46,11 @@ class eppClientTest extends TestCase {
                 ->appendChild($hello->createElement('hello'));
 
         $epp->sendFrame($hello);
+    }
+
+    public function testXMLParser(): void {
+        $this->expectException(error::class);
+
+        epp::parseXML('this is not XML');
     }
 }

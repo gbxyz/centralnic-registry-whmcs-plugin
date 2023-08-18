@@ -43,16 +43,6 @@ class frame extends \DOMDocument {
         $this->registerNodeClass('\DOMElement', __NAMESPACE__.'\element');
     }
 
-    public function loadXML(string $source, int $options=0) : bool {
-        $was = libxml_use_internal_errors(false);
-
-        $result = parent::loadXML($source, $options);
-
-        libxml_use_internal_errors($was);
-
-        return $result;
-    }
-
     public function create(string $localName, string $value='') : element {
         $el = $this->createElement($localName);
         if (strlen($value) > 0) $el->add($this->createTextNode($value));

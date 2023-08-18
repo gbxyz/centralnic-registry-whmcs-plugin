@@ -6,6 +6,7 @@
  */
 
 namespace centralnic\whmcs;
+use centralnic\whmcs\xml\frame;
 
 /**
  * EPP utility class
@@ -73,8 +74,8 @@ class epp {
      * send a <login> command
      * @throws error
      */
-    private function login(string $id, string $pw) : xml\frame {
-        $frame = new xml\frame;
+    private function login(string $id, string $pw) : frame {
+        $frame = new frame;
 
         $login = $frame->appendChild($frame->createElementNS(self::xmlns, 'epp'))
                     ->appendChild($frame->createElement('command'))
@@ -100,7 +101,7 @@ class epp {
      * get a frame from the server
      * @throws error
      */
-    public function getFrame() : xml\frame {
+    public function getFrame() : frame {
         $hdr = fread($this->socket, 4);
         if (false === $hdr || strlen($hdr) !== 4) {
             throw new error('error reading frame header');
@@ -113,12 +114,23 @@ class epp {
             throw new error('error reading frame payload from socket');
         }
 
-        $frame = new xml\frame;
+        $frame = self::parseXML($xml);
+
+        if ($this->debug) fwrite(STDERR, $frame->saveXML());
+
+        return $frame;
+    }
+
+    public static function parseXML(string $xml) : frame {
+        $frame = new frame;
+
+        $was = libxml_use_internal_errors(true);
+
         $ok = $frame->loadXML($xml);
 
         if (false === $ok) {
             foreach (libxml_get_errors() as $e) {
-                if (LIBXML_ERR_WARNING !== $e->level) {
+                if (LIBXML_ERR_WARNING != $e->level) {
                     throw new error(sprintf(
                         'error parsing XML from server: %s on line %u column %u',
                         $e->message,
@@ -129,7 +141,8 @@ class epp {
             }
         }
 
-        if ($this->debug) fwrite(STDERR, $frame->saveXML());
+        libxml_use_internal_errors($was);
+
         return $frame;
     }
 
@@ -137,7 +150,7 @@ class epp {
      * send a frame to the server
      * @throws error
      */
-    public function sendFrame(xml\frame $frame) : void {
+    public function sendFrame(frame $frame) : void {
         if (1 == $frame->getElementsByTagName('command')->length && 0 == $frame->getElementsByTagName('clTRID')->length) {
             $frame->getElementsByTagName('command')->item(0)->appendChild($frame->createElement('clTRID', self::generateclTRID()));
         }
@@ -167,7 +180,7 @@ class epp {
      * send a frame to the server and get the response
      * @throws error
      */
-    public function request(xml\frame $frame) : xml\frame {
+    public function request(frame $frame) : frame {
         //
         // send the frame to the server and get the response
         //
@@ -214,7 +227,7 @@ class epp {
      * @throws error
      */
     public function logout() : void {
-        $frame = new xml\frame;
+        $frame = new frame;
 
         $frame->appendChild($frame->createElementNS(self::xmlns, 'epp'))
             ->appendChild($frame->createElement('command'))
