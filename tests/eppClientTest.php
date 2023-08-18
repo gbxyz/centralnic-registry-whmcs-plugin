@@ -27,8 +27,8 @@ class eppClientTest extends TestCase {
     public function testDroppedConnection(): void {
         $epp = new epp(
             plugin::test_host,
-            getenv('EPP_CLIENT_ID'),
-            getenv('EPP_CLIENT_PW'),
+            getenv('EPP_CLIENT1_ID') ?: getenv('EPP_CLIENT_ID'),
+            getenv('EPP_CLIENT1_PW') ?: getenv('EPP_CLIENT_PW'),
         );
 
         $this->assertIsObject($epp);
