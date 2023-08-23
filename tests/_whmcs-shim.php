@@ -39,3 +39,8 @@ class SearchResult {
         $this->pricing = $pricing;
     }
 }
+
+namespace WHMCS\Exception\Module;
+
+class InvalidConfiguration extends \Exception {
+}
