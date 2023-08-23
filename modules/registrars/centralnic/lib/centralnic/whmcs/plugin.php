@@ -121,18 +121,21 @@ final class plugin {
     public static function getConfigArray() : array {
     	return [
     		'ResellerHandle' => [
+                'FriendlyName'  => 'Registrar ID',
                 'Type'          => 'text',
                 'Size'          => 64,
                 'Description'   => 'Your CentralNic Registrar ID.'
             ],
 
     		'ResellerAPIPassword' => [
+                'FriendlyName'  => 'Password',
                 'Type'          => 'password',
                 'Size'          => 64,
                 'Description'   => 'Your EPP password.',
             ],
 
     		'testMode' => [
+                'FriendlyName'  => 'Test Mode',
                 'Type'          => 'text',
                 'Size'          => 1,
                 'Default'       => '1',
@@ -140,6 +143,7 @@ final class plugin {
             ],
 
             'BillingCurrency' => [
+                'FriendlyName'  => 'Billing Currency',
                 'Type'          => 'text',
                 'Size'          => 3,
                 'Default'       => 'USD',
