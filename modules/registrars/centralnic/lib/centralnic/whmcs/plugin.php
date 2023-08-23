@@ -73,7 +73,8 @@ final class plugin {
             return $params['eppServer'];
         }
 
-        if (false !== ($server = getenv('EPP_SERVER_NAME'))) {
+        $server = getenv('EPP_SERVER_NAME');
+        if (false !== $server) {
             return $server;
         }
 
