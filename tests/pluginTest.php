@@ -738,7 +738,7 @@ class pluginTest extends TestCase {
     /**
      * @dataProvider configurationProvider
      */
-    public function testConfigValidate(array $config, bool $valid) {
+    public function testConfigValidate(array $config, bool $valid): void {
         if (!$valid) $this->expectException(InvalidConfiguration::class);
 
         try {
@@ -750,5 +750,12 @@ class pluginTest extends TestCase {
         }
 
         $this->assertTrue(true);
+    }
+
+    public function testServerName(): void {
+        $this->assertEquals(plugin::prod_host, plugin::serverName([]));
+
+        $name = 'epp.invalid';
+        $this->assertEquals($name, plugin::serverName(['eppServer' => $name]));
     }
 }
