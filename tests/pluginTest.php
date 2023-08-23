@@ -207,9 +207,19 @@ class pluginTest extends TestCase {
     public function testgetConfigArray() : void {
         $array = centralnic_getConfigArray();
         $this->assertIsArray($array);
-        $this->assertCount(4, $array);
 
-        foreach (['ResellerHandle', 'ResellerAPIPassword', 'testMode', 'BillingCurrency'] as $k) {
+        $keys = [
+            'ResellerHandle',
+            'ResellerAPIPassword',
+            'testMode',
+            'BillingCurrency',
+            'ClientCertificate',
+            'PrivateKey'
+        ];
+
+        $this->assertCount(count($keys), $array);
+
+        foreach ($keys as $k) {
             $this->assertArrayHasKey($k, $array);
             $this->assertIsArray($array[$k]);
 
