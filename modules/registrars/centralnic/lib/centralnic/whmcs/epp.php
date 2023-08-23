@@ -34,6 +34,14 @@ class epp {
     private $greeting;
     private $socket;
 
+    /**
+     * @param $host EPP server to connect to (on TCP port 700)
+     * @param $clid EPP client ID
+     * @param $pw EPP client password
+     * @param $debug whether to enable debugging
+     * @param $cert path to certificate
+     * @param $key path to private key (if not provided, any private key in $cert will be used)
+     */
     public function __construct(
         public readonly string $host,
         public readonly string $clid,
@@ -48,6 +56,9 @@ class epp {
 
     /**
      * connect to the server
+     * @param $host EPP server to connect to (on TCP port 700)
+     * @param $cert path to certificate
+     * @param $key path to private key (if not provided, any private key in $cert will be used)
      * @throws error
      */
     private function connect(
@@ -93,6 +104,8 @@ class epp {
 
     /**
      * send a <login> command
+     * @param $clid EPP client ID
+     * @param $pw EPP client password
      * @throws error
      */
     private function login(string $id, string $pw) : frame {
