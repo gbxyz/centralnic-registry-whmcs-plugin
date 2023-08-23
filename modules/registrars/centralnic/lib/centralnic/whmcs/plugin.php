@@ -961,6 +961,9 @@ final class plugin {
                     key:    $key,
                 );
 
+            } catch (\Throwable $e) {
+                throw $e;
+
             } finally {
                 if ($delete_cert) unlink($cert);
                 if ($delete_key)  unlink($key);
