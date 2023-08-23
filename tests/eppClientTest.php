@@ -61,4 +61,19 @@ class eppClientTest extends TestCase {
 
         epp::parseXML('this is not XML');
     }
+
+    public function testConnectWithClientCertificate(): void {
+        $params = pluginTest::standardFunctionParams();
+
+        $params['ClientCertificate']    = 'foo';
+        $params['PrivateKey']           = 'bar';
+
+        self::setupErrorHandler();
+
+        $this->expectException(ErrorException::class);
+
+        plugin::getConnection($params);
+
+        set_error_handler(null);
+    }
 }
