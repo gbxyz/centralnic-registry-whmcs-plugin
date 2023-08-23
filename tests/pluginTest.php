@@ -109,7 +109,7 @@ class pluginTest extends TestCase {
      * this returns a set of common function parameters common
      * to all module functions
      */
-    private static function standardFunctionParams() : array {
+    public static function standardFunctionParams() : array {
         return [
             'testMode'              => 1,
             'ResellerHandle'        => self::getenv('EPP_CLIENT1_ID') ?? self::getenv('EPP_CLIENT_ID'),
