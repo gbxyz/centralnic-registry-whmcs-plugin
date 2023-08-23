@@ -8,6 +8,7 @@
 use PHPUnit\Framework\TestCase;
 use centralnic\whmcs\{plugin,epp};
 use centralnic\whmcs\xml\frame;
+use WHMCS\Exception\Module\InvalidConfiguration;
 
 class pluginTest extends TestCase {
 
@@ -713,5 +714,41 @@ class pluginTest extends TestCase {
             $this->assertArrayHasKey('renew', $result->results[0]->pricing);
             $this->assertEquals($renewPrice, $result->results[0]->pricing['renew']);
         }
+    }
+
+    public static function configurationProvider(): array {
+        $std = self::standardFunctionParams();
+
+        return [
+            [
+                [],
+                false,
+            ],
+            [
+                $std,
+                true,
+            ],
+            [
+                array_merge($std, ['ResellerAPIPassword' => 'bogusPassword']),
+                false,
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider configurationProvider
+     */
+    public function testConfigValidate(array $config, bool $valid) {
+        if (!$valid) $this->expectException(InvalidConfiguration::class);
+
+        try {
+            centralnic_config_validate($config);
+
+        } catch (Throwable $e) {
+            throw $e;
+
+        }
+
+        $this->assertTrue(true);
     }
 }

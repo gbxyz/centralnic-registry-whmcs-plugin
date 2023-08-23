@@ -898,6 +898,25 @@ final class plugin {
     }
 
     /**
+     * @throws WHMCS\Exception\Module\InvalidConfiguration
+     */
+    public static function config_validate(array $params) : void {
+        try {
+            self::forceDisconnect();
+
+            self::getConnection($params);
+
+            self::forceDisconnect();
+
+        } catch (\Throwable $e) {
+            throw new \WHMCS\Exception\Module\InvalidConfiguration(
+                message:  "Invalid configuration: ".$e->getMessage(),
+                previous: $e,
+            );
+        }
+    }
+
+    /**
      *
      * helper functions from this point onwards!
      *
