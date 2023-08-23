@@ -65,9 +65,24 @@ final class plugin {
 
     private static ?epp $epp = null;
 
-    const registry_domain   = 'centralnic.com';
-	const prod_host         = 'epp.'.self::registry_domain;
-	const test_host         = 'epp-ote.'.self::registry_domain;
+	const prod_host = 'epp.centralnic.com';
+	const test_host = 'epp-ote.centralnic.com';
+
+    public static function serverName(array $params) : string {
+        if (array_key_exists('eppServer', $params)) {
+            return $params['eppServer'];
+        }
+
+        if (false !== ($server = getenv('EPP_SERVER_NAME'))) {
+            return $server;
+        }
+
+        if (array_key_exists('testMode', $params) && 1 === intval($params['testMode'])) {
+            return self::test_host;
+        }
+
+        return self::prod_host;
+    }
 
     //
     // the $debug property of the EPP connection object is a
