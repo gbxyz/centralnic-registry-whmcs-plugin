@@ -148,7 +148,23 @@ final class plugin {
                 'Size'          => 3,
                 'Default'       => 'USD',
                 'Description'   => 'The currency to use for fees and pricing.'
-            ]
+            ],
+
+            'ClientCertificate' => [
+                'FriendlyName'  => 'Client Certificate',
+                'Type'          => 'textarea',
+                'Description'   => 'Your client certificate (in PEM format), or the location of the key file on the server.',
+                'Rows'          => 80,
+                'Cols'          => 24,
+            ],
+
+            'PrivateKey' => [
+                'FriendlyName'  => 'Private Key',
+                'Type'          => 'textarea',
+                'Description'   => 'The (unencrypted) private key associated with your client certificate. This may be the key data itself (in PEM format) or the location of the key file on the server.',
+                'Rows'          => 80,
+                'Cols'          => 24,
+            ],
         ];
     }
 
@@ -897,12 +913,58 @@ final class plugin {
                 throw new error("invalid argument passed to ".__METHOD__."(), array expected");
             }
 
-            self::$epp = new epp(
-                host:   1 == $params['testMode'] ? self::test_host : self::prod_host,
-                clid:   $params['ResellerHandle'],
-                pw:     $params['ResellerAPIPassword'],
-                debug:  self::$debug,
-            );
+            foreach (['ResellerHandle', 'ResellerAPIPassword'] as $k) {
+                if (!array_key_exists($k, $params) || !is_string($params[$k]) || empty($params[$k])) {
+                    throw new error("missing config parameter '{$k}'");
+                }
+            }
+
+            $delete_cert = $delete_key = false;
+
+            $cert = null;
+            if (array_key_exists('ClientCertificate', $params) && !is_null($params['ClientCertificate'])) {
+                if (str_starts_with($params['ClientCertificate'], '/')) {
+                    $cert = $params['ClientCertificate'];
+
+                } else {
+                    $cert = tempnam(sys_get_temp_dir(), __METHOD__);
+                    if (!touch($cert)) throw new Exception("Cannot create {$cert}");
+                    if (!chmod($cert, 0600)) throw new Exception("Cannot chmod {$cert}");
+                    if (false === file_put_contents($cert, $params['ClientCertificate'])) throw new Exception("Cannot write {$cert}");
+
+                    $delete_cert = true;
+                }
+            }
+
+            $key = null;
+            if (array_key_exists('PrivateKey', $params) && !is_null($params['PrivateKey'])) {
+                if (str_starts_with($params['PrivateKey'], '/')) {
+                    $cert = $params['PrivateKey'];
+
+                } else {
+                    $key = tempnam(sys_get_temp_dir(), __METHOD__);
+                    if (!touch($key)) throw new Exception("Cannot create {$key}");
+                    if (!chmod($key, 0600)) throw new Exception("Cannot chmod {$key}");
+                    if (false === file_put_contents($key, $params['PrivateKey'])) throw new Exception("Cannot write {$key}");
+
+                    $delete_key = true;
+                }
+            }
+
+            try {
+                self::$epp = new epp(
+                    host:   self::serverName($params),
+                    clid:   $params['ResellerHandle'],
+                    pw:     $params['ResellerAPIPassword'],
+                    debug:  self::$debug,
+                    cert:   $cert,
+                    key:    $key,
+                );
+
+            } finally {
+                if ($delete_cert) unlink($cert);
+                if ($delete_key)  unlink($key);
+            }
         }
 
         return self::$epp;
