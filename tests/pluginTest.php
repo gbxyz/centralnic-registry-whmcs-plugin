@@ -755,7 +755,14 @@ class pluginTest extends TestCase {
     public function testServerName(): void {
         $this->assertEquals(plugin::prod_host, plugin::serverName([]));
 
+        putenv('EPP_SERVER_NAME=');
+
         $name = 'epp.invalid';
         $this->assertEquals($name, plugin::serverName(['eppServer' => $name]));
+
+        putenv('EPP_SERVER_NAME='.$name);
+        $this->assertEquals($name, plugin::serverName([]));
+
+        putenv('EPP_SERVER_NAME=');
     }
 }
