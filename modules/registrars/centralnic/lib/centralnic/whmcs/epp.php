@@ -38,9 +38,11 @@ class epp {
         public readonly string $host,
         public readonly string $clid,
         string $pw,
-        public bool $debug=false
+        public bool $debug=false,
+        ?string $cert=null,
+        ?string $key=null,
     ) {
-        $this->connect($host);
+        $this->connect($host, $key, $cert);
         $this->login($clid, $pw);
     }
 
@@ -48,13 +50,32 @@ class epp {
      * connect to the server
      * @throws error
      */
-    private function connect(string $host) : void {
+    private function connect(
+        string $host,
+        ?string $key=null,
+        ?string $cert=null,
+    ) : void {
+
+        $options = [
+            'ssl' => [
+                'verify_peer'       => true,
+                'verify_peer_name'  => true,
+                'verify_depth'      => 16,
+            ],
+        ];
+
+        if ($key)   $options['ssl']['local_pk'] = $key;
+        if ($cert)  $options['ssl']['local_cert'] = $cert;
+
+        $context = stream_context_create($options);
+
         $this->socket = stream_socket_client(
             'tls://'.$host.':'.self::port,
             $error_code,
             $error_mesg,
             self::timeout,
             STREAM_CLIENT_CONNECT,
+            $context,
         );
 
         if (!is_resource($this->socket)) {
