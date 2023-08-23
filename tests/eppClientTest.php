@@ -8,6 +8,8 @@
 use PHPUnit\Framework\TestCase;
 use centralnic\whmcs\{plugin,epp,error};
 
+require_once __DIR__.'/pluginTest.php';
+
 class eppClientTest extends TestCase {
 
     private static function setupErrorHandler(): void {
@@ -32,10 +34,12 @@ class eppClientTest extends TestCase {
     }
 
     public function testDroppedConnection(): void {
+        $params = pluginTest::standardFunctionParams();
+
         $epp = new epp(
-            plugin::test_host,
-            getenv('EPP_CLIENT1_ID') ?: getenv('EPP_CLIENT_ID'),
-            getenv('EPP_CLIENT1_PW') ?: getenv('EPP_CLIENT_PW'),
+            host:   plugin::serverName($params),
+            clid:   $params['ResellerHandle'],
+            pw:     $params['ResellerAPIPassword'],
         );
 
         $this->assertIsObject($epp);
