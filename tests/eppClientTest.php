@@ -10,9 +10,7 @@ use centralnic\whmcs\{plugin,epp,error};
 
 class eppClientTest extends TestCase {
 
-    public function testFailedConnection(): void {
-        $this->expectException(ErrorException::class);
-
+    private static function setupErrorHandler(): void {
         set_error_handler(function ($severity, $message, $file, $line) {
             if (!(error_reporting() & $severity)) {
                 // This error code is not included in error_reporting
@@ -21,6 +19,12 @@ class eppClientTest extends TestCase {
 
             throw new ErrorException($message, 0, $severity, $file, $line);
         });
+    }
+
+    public function testFailedConnection(): void {
+        self::setupErrorHandler();
+
+        $this->expectException(ErrorException::class);
 
         $epp = new epp('127.0.0.1', 'foo', 'bar', true);
 
