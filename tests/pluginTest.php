@@ -23,7 +23,7 @@ class pluginTest extends TestCase {
     private static string $domain;
     private static string $authInfo;
 
-    private static function getenv(string $name): string {
+    private static function getenv(string $name) : string {
         $value = getenv($name);
 
         if (false === $value || strlen($name) < 1) {
@@ -196,7 +196,7 @@ class pluginTest extends TestCase {
         $this->assertEquals($expectedType, $ret->getName());
     }
 
-    public function testMetaData() {
+    public function testMetaData() : void {
         $array = centralnic_MetaData();
         $this->assertIsArray($array);
         $this->assertCount(2, $array);
@@ -204,7 +204,7 @@ class pluginTest extends TestCase {
         $this->assertNotEmpty($array['APIVersion']);
     }
 
-    public function testgetConfigArray() {
+    public function testgetConfigArray() : void {
         $array = centralnic_getConfigArray();
         $this->assertIsArray($array);
         $this->assertCount(4, $array);
@@ -221,7 +221,7 @@ class pluginTest extends TestCase {
         }
     }
 
-    public function testParams() {
+    public function testParams() : void {
         $params = self::standardFunctionParams();
 
         foreach (['ResellerHandle', 'ResellerAPIPassword'] as $k) {
@@ -229,7 +229,7 @@ class pluginTest extends TestCase {
         }
     }
 
-    public function testRegisterDomain() {
+    public function testRegisterDomain() : void {
         $params = self::standardFunctionParams();
 
         $params['sld']              = substr(self::$domain, 0, strpos(self::$domain, '.'));
@@ -338,7 +338,7 @@ class pluginTest extends TestCase {
         }
     }
 
-    public function testRenewDomain() {
+    public function testRenewDomain() : void {
         $params = self::standardFunctionParams();
 
         $params['domain']           = self::$domain;
@@ -348,7 +348,7 @@ class pluginTest extends TestCase {
         $this->doStandardResultChecks(centralnic_RenewDomain($params));
     }
 
-    public function testGetNameservers() {
+    public function testGetNameservers() : void {
         $params = self::standardFunctionParams();
 
         $params['domain'] = self::$domain;
@@ -362,7 +362,7 @@ class pluginTest extends TestCase {
         }
     }
 
-    public function testSaveNameservers() {
+    public function testSaveNameservers() : void {
         $params = self::standardFunctionParams();
 
         $params['domain'] = self::$domain;
@@ -392,7 +392,7 @@ class pluginTest extends TestCase {
         $this->assertEquals($expectedNS, $actualNS);
     }
 
-    public function testGetRegistrarLock() {
+    public function testGetRegistrarLock() : void {
         $params = self::standardFunctionParams();
 
         $params['domain'] = self::$domain;
@@ -403,7 +403,7 @@ class pluginTest extends TestCase {
         $this->assertEquals('unlocked', $lock);
     }
 
-    public function testAddRegistrarLock() {
+    public function testAddRegistrarLock() : void {
         $params = self::standardFunctionParams();
 
         $params['domain']       = self::$domain;
@@ -412,7 +412,7 @@ class pluginTest extends TestCase {
         $this->doStandardResultChecks(centralnic_SaveRegistrarLock($params));
     }
 
-    public function testRemoveRegistrarLock() {
+    public function testRemoveRegistrarLock() : void {
         $params = self::standardFunctionParams();
 
         $params['domain']       = self::$domain;
@@ -421,7 +421,7 @@ class pluginTest extends TestCase {
         $this->doStandardResultChecks(centralnic_SaveRegistrarLock($params));
     }
 
-    public function testGetContactDetails() {
+    public function testGetContactDetails() : void {
         $params = self::standardFunctionParams();
 
         $params['domain'] = self::$domain;
@@ -441,7 +441,7 @@ class pluginTest extends TestCase {
         }
     }
 
-    public function testSaveContactDetails() {
+    public function testSaveContactDetails() : void {
         $params = self::standardFunctionParams();
 
         $params['domain'] = self::$domain;
@@ -471,7 +471,7 @@ class pluginTest extends TestCase {
         $this->doStandardResultChecks(centralnic_SaveContactDetails($params));
     }
 
-    public function testGetEPPCode() {
+    public function testGetEPPCode() : void {
         $params = self::standardFunctionParams();
 
         $params['domain'] = self::$domain;
@@ -486,7 +486,7 @@ class pluginTest extends TestCase {
         self::$authInfo = $result['eppcode'];
     }
 
-    public function testRegisterNameserver() {
+    public function testRegisterNameserver() : void {
         $params = self::standardFunctionParams();
 
         $params['nameserver']   = 'ns0.'.self::$domain;
@@ -495,7 +495,7 @@ class pluginTest extends TestCase {
         $this->doStandardResultChecks(centralnic_RegisterNameserver($params));
     }
 
-    public function testModifyNameserver() {
+    public function testModifyNameserver() : void {
         $params = self::standardFunctionParams();
 
         $params['nameserver']   = 'ns0.'.self::$domain;
@@ -505,7 +505,7 @@ class pluginTest extends TestCase {
         $this->doStandardResultChecks(centralnic_ModifyNameserver($params));
     }
 
-    public function testDeleteNameserver() {
+    public function testDeleteNameserver() : void {
         $params = self::standardFunctionParams();
 
         $params['nameserver'] = 'ns0.'.self::$domain;
@@ -513,7 +513,7 @@ class pluginTest extends TestCase {
         $this->doStandardResultChecks(centralnic_DeleteNameserver($params));
     }
 
-    public function testSync() {
+    public function testSync() : void {
         $params = self::standardFunctionParams();
         $params['domain'] = self::$domain;
 
@@ -537,7 +537,7 @@ class pluginTest extends TestCase {
         $this->assertFalse($result['transferredAway']);
     }
 
-    public function testTransferDomain() {
+    public function testTransferDomain() : void {
         $params = self::standardFunctionParams();
 
         //
@@ -598,7 +598,7 @@ class pluginTest extends TestCase {
         return;
     }
 
-    public function testTransferSync() {
+    public function testTransferSync() : void {
         $params = self::standardFunctionParams();
         $params['domain'] = self::$domain;
 
@@ -635,8 +635,7 @@ class pluginTest extends TestCase {
         plugin::forceDisconnect();
     }
 
-
-    public function testRequestDelete() {
+    public function testRequestDelete() : void {
         $params = self::standardFunctionParams();
 
         $params['domain'] = self::$domain;
@@ -644,7 +643,7 @@ class pluginTest extends TestCase {
         $this->doStandardResultChecks(centralnic_RequestDelete($params));
     }
 
-    public function testRequestDeleteForNonExistentDomain() {
+    public function testRequestDeleteForNonExistentDomain() : void {
         $params = self::standardFunctionParams();
 
         $params['domain'] = 'this-domain-should-not-exist-'.uniqid().'.'.$params['tld'];
@@ -670,7 +669,7 @@ class pluginTest extends TestCase {
         ?string $currency=NULL,
         ?float  $registerPrice=NULL,
         ?float  $renewPrice=NULL
-    ) {
+    ) : void {
         $this->assertTrue(true);
 
         $params = self::standardFunctionParams();
