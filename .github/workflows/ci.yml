@@ -21,6 +21,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: update cache
+        run: apt-get -qqq updatr
+
       - name: install packages
         run: apt-get install -qqq php-pcov nodejs
 
