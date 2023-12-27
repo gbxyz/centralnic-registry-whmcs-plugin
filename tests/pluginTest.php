@@ -83,6 +83,8 @@ class pluginTest extends TestCase {
                 'avail'     => false,
                 'premium'   => false,
             ],
+
+/* disabled until CN provides alternative test names
             [
                 // not registered, premium
                 'sld'       => 'aa',
@@ -103,6 +105,8 @@ class pluginTest extends TestCase {
                 'register'  => 99.00,
                 'renew'     => 16.25,
             ],
+*/
+
         ];
     }
 
