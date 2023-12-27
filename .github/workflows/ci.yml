@@ -17,7 +17,8 @@ env:
 jobs:
   Test:
     runs-on: ubuntu-latest
-    container: gbxyz/ubuntu-latest-php-82-openswoole:main
+    container: gbxyz/openswoole:php83
+
     steps:
       - uses: actions/checkout@v3
 
@@ -25,7 +26,7 @@ jobs:
         run: apt-get -qqq update
 
       - name: install packages
-        run: apt-get install -qqq php-pcov nodejs
+        run: apt-get install -qqq php8.3-pcov nodejs
 
       - name: run composer install
         run: composer install --dev
